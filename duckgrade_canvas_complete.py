@@ -16,9 +16,19 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget,
                             QLineEdit, QPushButton, QComboBox, QTextEdit,
                             QCheckBox, QProgressBar, QMessageBox, QFileDialog,
                             QSpacerItem, QSizePolicy, QInputDialog, QScrollArea,
-                            QRadioButton, QButtonGroup)
-from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QObject, pyqtSignal
+                            QRadioButton, QButtonGroup, QSplitter, QSpinBox,
+                            QStackedWidget)
+from PyQt6.QtCore import Qt, QSize, QEvent, QTimer, QObject, pyqtSignal, QUrl
 from PyQt6.QtGui import QIcon, QFont
+
+# Try to import QWebEngineView for PDF/document rendering
+try:
+    from PyQt6.QtWebEngineWidgets import QWebEngineView
+    WEB_ENGINE_AVAILABLE = True
+except ImportError:
+    print("Note: QWebEngineView not available. Will use text extraction for all documents.")
+    QWebEngineView = None
+    WEB_ENGINE_AVAILABLE = False
 
 # Import Canvas integration components
 try:
@@ -193,8 +203,42 @@ class DuckGradeCanvasGUI(QMainWindow):
         self._cached_openai_key = None
         self._cached_canvas_url = None
         self._cached_canvas_token = None
+        # Load general configuration
+        self.general_config = self.load_general_config()
         self.init_ui()
         self.setup_window()
+    
+    def load_general_config(self):
+        """Load general configuration from config/general_config.json"""
+        config_path = Path("config/general_config.json")
+        default_config = {
+            "ui_options": {
+                "show_test_mode_button": False
+            }
+        }
+        
+        try:
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                # Merge with defaults to ensure all keys exist
+                for key, value in default_config.items():
+                    if key not in config:
+                        config[key] = value
+                    elif isinstance(value, dict) and isinstance(config[key], dict):
+                        for sub_key, sub_value in value.items():
+                            if sub_key not in config[key]:
+                                config[key][sub_key] = sub_value
+                return config
+            else:
+                # Create config file with defaults
+                config_path.parent.mkdir(exist_ok=True)
+                with open(config_path, 'w') as f:
+                    json.dump(default_config, f, indent=4)
+                return default_config
+        except Exception as e:
+            print(f"Warning: Could not load general config: {e}")
+            return default_config
     
     def init_ui(self):
         """Initialize the user interface"""
@@ -207,21 +251,35 @@ class DuckGradeCanvasGUI(QMainWindow):
         # Create tab widget
         self.tab_widget = QTabWidget()
         
-        # Add tabs matching Tkinter structure exactly
-        self.tab_widget.addTab(self.create_connection_tab(), "API Connections")
-        self.tab_widget.addTab(self.create_two_step_tab(), "📋 Two-Step Grading")
-        self.tab_widget.addTab(self.create_single_step_tab(), "⚡ Single-Step Grading")
-        self.tab_widget.addTab(self.create_results_tab(), "📊 Results")
+        # Create all tabs but only add Home initially
+        self.home_tab = self.create_home_tab()
+        self.two_step_tab = self.create_two_step_tab()
+        self.single_step_tab = self.create_single_step_tab()
+        self.results_tab = self.create_results_tab()
+        self.duckassess_two_step_tab = self.create_duckassess_two_step_tab()
+        self.duckassess_one_step_tab = self.create_duckassess_one_step_tab()
+        
+        # Review Tab (initially not created, only created when needed)
+        self.review_tab = None
+        self.review_tab_visible = False
+        
+        # Initially show only Home tab
+        self.tab_widget.addTab(self.home_tab, "🏠 Home")
+        
+        # Track current tool
+        self.current_tool = None
         
         main_layout.addWidget(self.tab_widget)
+        
+        # Initialize default state - no tool selected initially
     
-    def create_connection_tab(self) -> QWidget:
-        """Create Canvas Connection tab matching Tkinter structure"""
+    def create_home_tab(self) -> QWidget:
+        """Create Home tab with API connections and tool selection"""
         # Create main tab widget
         tab = QWidget()
         tab_layout = QVBoxLayout(tab)
         
-        # Create scroll area
+        # Create scroll area for the main content
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -379,15 +437,16 @@ class DuckGradeCanvasGUI(QMainWindow):
         self.connection_status.setStyleSheet("color: red; font-weight: bold;")
         status_layout.addWidget(self.connection_status)
         
-        # Test mode button for development/testing
-        test_mode_layout = QHBoxLayout()
-        test_mode_btn = QPushButton("🧪 Enable Test Mode")
-        test_mode_btn.setToolTip("Enable grading buttons for testing without Canvas connection")
-        test_mode_btn.clicked.connect(self.enable_test_mode)
-        test_mode_btn.setFixedHeight(21)
-        test_mode_layout.addWidget(test_mode_btn)
-        test_mode_layout.addStretch()
-        status_layout.addLayout(test_mode_layout)
+        # Test mode button for development/testing (conditionally shown)
+        if self.general_config.get("ui_options", {}).get("show_test_mode_button", False):
+            test_mode_layout = QHBoxLayout()
+            test_mode_btn = QPushButton("🧪 Enable Test Mode")
+            test_mode_btn.setToolTip("Enable grading buttons for testing without Canvas connection")
+            test_mode_btn.clicked.connect(self.enable_test_mode)
+            test_mode_btn.setFixedHeight(21)
+            test_mode_layout.addWidget(test_mode_btn)
+            test_mode_layout.addStretch()
+            status_layout.addLayout(test_mode_layout)
         
         layout.addWidget(status_group)
         layout.addStretch()
@@ -398,7 +457,112 @@ class DuckGradeCanvasGUI(QMainWindow):
         # Add scroll area to the main tab layout
         tab_layout.addWidget(scroll_area)
         
+        # Add tool selection buttons at the bottom
+        tool_selection_group = QGroupBox("🛠️ DuckWorks Tool Suite")
+        tool_layout = QHBoxLayout(tool_selection_group)
+        
+        # Create button group for exclusive selection
+        self.tool_button_group = QButtonGroup()
+        
+        # DuckGrade button
+        self.duckgrade_button = QPushButton()
+        self.duckgrade_button.setText("DuckGrade")
+        self.duckgrade_button.setToolTip("DuckGrade: Automated grading with AI-powered feedback, Canvas integration, and privacy protection")
+        self.duckgrade_button.setCheckable(True)
+        self.duckgrade_button.setMinimumHeight(80)
+        self.duckgrade_button.setMinimumWidth(200)
+        if Path("assets/mallard_icon.png").exists():
+            self.duckgrade_button.setIcon(QIcon("assets/mallard_icon.png"))
+            self.duckgrade_button.setIconSize(QSize(32, 32))
+        self.duckgrade_button.clicked.connect(lambda: self.switch_to_tool("duckgrade"))
+        self.tool_button_group.addButton(self.duckgrade_button)
+        
+        # DuckAssess button
+        self.duckassess_button = QPushButton()
+        self.duckassess_button.setText("DuckAssess")
+        self.duckassess_button.setToolTip("DuckAssess: Intelligent assessment creation with automated question generation and rubric design")
+        self.duckassess_button.setCheckable(True)
+        self.duckassess_button.setMinimumHeight(80)
+        self.duckassess_button.setMinimumWidth(200)
+        if Path("assets/duckling_icon.png").exists():
+            self.duckassess_button.setIcon(QIcon("assets/duckling_icon.png"))
+            self.duckassess_button.setIconSize(QSize(32, 32))
+        self.duckassess_button.clicked.connect(lambda: self.switch_to_tool("duckassess"))
+        self.tool_button_group.addButton(self.duckassess_button)
+        
+        # Style the tool buttons
+        tool_button_style = """
+            QPushButton {
+                border: 2px solid #dee2e6;
+                border-radius: 12px;
+                background-color: #ffffff;
+                padding: 15px;
+                font-size: 11pt;
+                font-weight: bold;
+                text-align: center;
+                color: #495057;
+            }
+            QPushButton:hover {
+                background-color: #e9ecef;
+                border-color: #007bff;
+            }
+            QPushButton:checked {
+                background-color: #007bff;
+                color: white;
+                border-color: #0056b3;
+            }
+            QPushButton:pressed {
+                background-color: #0056b3;
+            }
+            QPushButton:checked:hover {
+                background-color: #0056b3;
+            }
+        """
+        self.duckgrade_button.setStyleSheet(tool_button_style)
+        self.duckassess_button.setStyleSheet(tool_button_style)
+        
+        # Add buttons to layout with stretch
+        tool_layout.addStretch()
+        tool_layout.addWidget(self.duckgrade_button)
+        tool_layout.addWidget(self.duckassess_button)
+        tool_layout.addStretch()
+        
+        # Add tool selection group to main tab layout
+        tab_layout.addWidget(tool_selection_group)
+        
         return tab
+    
+    def switch_to_tool(self, tool_name):
+        """Switch to the specified tool and show its tabs"""
+        # Clear existing tabs except Home (index 0)
+        while self.tab_widget.count() > 1:
+            self.tab_widget.removeTab(1)
+        
+        # Update current tool
+        self.current_tool = tool_name
+        
+        if tool_name == "duckgrade":
+            # Add DuckGrade tabs
+            self.tab_widget.addTab(self.two_step_tab, "📋 Two-Step Grading")
+            self.tab_widget.addTab(self.single_step_tab, "⚡ Single-Step Grading")
+            self.tab_widget.addTab(self.results_tab, "📊 Results")
+            
+            # Update button states
+            self.duckgrade_button.setChecked(True)
+            self.duckassess_button.setChecked(False)
+            
+        elif tool_name == "duckassess":
+            # Add DuckAssess tabs
+            self.tab_widget.addTab(self.duckassess_two_step_tab, "📝 Two-Step Assessment")
+            self.tab_widget.addTab(self.duckassess_one_step_tab, "⚡ One-Step Assessment")
+            
+            # Update button states
+            self.duckgrade_button.setChecked(False)
+            self.duckassess_button.setChecked(True)
+        
+        # Switch to the first non-home tab if we just added some
+        if self.tab_widget.count() > 1:
+            self.tab_widget.setCurrentIndex(1)
     
     def create_two_step_tab(self) -> QWidget:
         """Create Two-Step Grading tab matching Tkinter structure"""
@@ -975,17 +1139,472 @@ class DuckGradeCanvasGUI(QMainWindow):
         
         return tab
     
+    def create_duckassess_two_step_tab(self) -> QWidget:
+        """Create DuckAssess Two-Step Assessment tab (placeholder for now)"""
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        
+        # Add a placeholder message
+        placeholder_group = QGroupBox("🚧 Two-Step Assessment Creation")
+        placeholder_layout = QVBoxLayout(placeholder_group)
+        
+        placeholder_label = QLabel("This tab will contain the Two-Step Assessment creation interface.\n\n"
+                                 "Features coming soon:\n"
+                                 "• Create assessment rubrics\n"
+                                 "• Generate question banks\n"
+                                 "• Design multi-stage assessments\n"
+                                 "• Preview and review assessment content")
+        placeholder_label.setStyleSheet("font-size: 12pt; padding: 20px;")
+        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        placeholder_layout.addWidget(placeholder_label)
+        tab_layout.addWidget(placeholder_group)
+        tab_layout.addStretch()
+        
+        return tab
+    
+    def create_duckassess_one_step_tab(self) -> QWidget:
+        """Create DuckAssess One-Step Assessment tab (placeholder for now)"""
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        
+        # Add a placeholder message
+        placeholder_group = QGroupBox("⚡ One-Step Assessment Creation")
+        placeholder_layout = QVBoxLayout(placeholder_group)
+        
+        placeholder_label = QLabel("This tab will contain the One-Step Assessment creation interface.\n\n"
+                                 "Features coming soon:\n"
+                                 "• Quick assessment generation\n"
+                                 "• Automated question creation\n"
+                                 "• Instant assessment deployment\n"
+                                 "• Real-time assessment analytics")
+        placeholder_label.setStyleSheet("font-size: 12pt; padding: 20px;")
+        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        placeholder_layout.addWidget(placeholder_label)
+        tab_layout.addWidget(placeholder_group)
+        tab_layout.addStretch()
+        
+        return tab
+    
+    def create_review_tab(self, review_spreadsheet_path, submission_folder_path) -> QWidget:
+        """Create Review Tab with split-panel layout for reviewing graded submissions"""
+        # Create main tab widget
+        tab = QWidget()
+        tab_layout = QVBoxLayout(tab)
+        
+        # Create scroll area for the entire tab content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        
+        # Create content widget that will go inside scroll area
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        
+        # Header with assignment info
+        header_group = QGroupBox("👁️ Review Graded Submissions")
+        header_layout = QVBoxLayout(header_group)
+        
+        # Assignment details
+        self.review_assignment_info = QLabel("Loading assignment information...")
+        self.review_assignment_info.setStyleSheet("font-weight: bold; padding: 5px;")
+        header_layout.addWidget(self.review_assignment_info)
+        
+        content_layout.addWidget(header_group)
+        
+        # Main content: Navigation controls
+        nav_group = QGroupBox("🧭 Navigation")
+        nav_layout = QHBoxLayout(nav_group)
+        
+        # Previous button
+        self.review_prev_btn = QPushButton("◀ Previous")
+        self.review_prev_btn.clicked.connect(self.review_previous_submission)
+        nav_layout.addWidget(self.review_prev_btn)
+        
+        # Submission selector dropdown (no label, full width)
+        self.review_submission_combo = QComboBox()
+        self.review_submission_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.review_submission_combo.currentIndexChanged.connect(self.review_submission_changed)
+        
+        # Style the combo box to match Two-Step Grading tab
+        self.review_submission_combo.setStyleSheet("""
+            QComboBox {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 8px;
+                background-color: white;
+                font-size: 10pt;
+                padding-right: 25px;
+            }
+            QComboBox:hover {
+                border-color: #adb5bd;
+            }
+            QComboBox:focus {
+                border-color: #80bdff;
+                outline: 0;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+                border-left-width: 1px;
+                border-left-color: #ced4da;
+                border-left-style: solid;
+                border-top-right-radius: 3px;
+                border-bottom-right-radius: 3px;
+                background-color: #f8f9fa;
+            }
+            QComboBox::drop-down:hover {
+                background-color: #e9ecef;
+            }
+            QComboBox::down-arrow {
+                image: url(assets/down-arrow_gray.png);
+                width: 12px;
+                height: 8px;
+            }
+            QComboBox QAbstractItemView {
+                border: 1px solid #ced4da;
+                background-color: white;
+                selection-background-color: #007bff;
+                selection-color: white;
+            }
+        """)
+        
+        nav_layout.addWidget(self.review_submission_combo)
+        
+        # Next button
+        self.review_next_btn = QPushButton("Next ▶")
+        self.review_next_btn.clicked.connect(self.review_next_submission)
+        nav_layout.addWidget(self.review_next_btn)
+        
+        # Progress info
+        self.review_progress_label = QLabel("0 of 0")
+        self.review_progress_label.setStyleSheet("font-weight: bold; padding: 0 10px;")
+        nav_layout.addWidget(self.review_progress_label)
+        
+        content_layout.addWidget(nav_group)
+        
+        # Main split panel
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setChildrenCollapsible(False)
+        
+        # Left panel: Submission content (2/3 width)
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        
+        submission_group = QGroupBox("📄 Submission Content")
+        submission_layout = QVBoxLayout(submission_group)
+        
+        # Submission file info with navigation buttons
+        file_info_layout = QHBoxLayout()
+        
+        self.review_file_info = QLabel("No submission selected")
+        self.review_file_info.setStyleSheet("font-weight: bold; color: #666; padding: 5px;")
+        file_info_layout.addWidget(self.review_file_info)
+        
+        file_info_layout.addStretch()
+        
+        # View In Directory button (aligned right)
+        self.review_view_directory_btn = QPushButton("📁 View In Directory")
+        self.review_view_directory_btn.setToolTip("Open student's submission folder")
+        self.review_view_directory_btn.clicked.connect(self.review_open_submission_directory)
+        self.review_view_directory_btn.setEnabled(False)  # Initially disabled
+        file_info_layout.addWidget(self.review_view_directory_btn)
+        
+        # File navigation buttons (initially hidden)
+        self.review_prev_file_btn = QPushButton("◀")
+        self.review_prev_file_btn.setToolTip("Previous file")
+        self.review_prev_file_btn.setFixedSize(30, 25)
+        self.review_prev_file_btn.clicked.connect(self.review_previous_submission_file)
+        self.review_prev_file_btn.hide()
+        file_info_layout.addWidget(self.review_prev_file_btn)
+        
+        self.review_file_counter = QLabel("")
+        self.review_file_counter.setStyleSheet("font-weight: bold; color: #666; padding: 0 10px;")
+        self.review_file_counter.hide()
+        file_info_layout.addWidget(self.review_file_counter)
+        
+        self.review_next_file_btn = QPushButton("▶")
+        self.review_next_file_btn.setToolTip("Next file")
+        self.review_next_file_btn.setFixedSize(30, 25)
+        self.review_next_file_btn.clicked.connect(self.review_next_submission_file)
+        self.review_next_file_btn.hide()
+        file_info_layout.addWidget(self.review_next_file_btn)
+        
+        submission_layout.addLayout(file_info_layout)
+        
+        # Submission content viewer - using stacked widget for different view types
+        self.submission_viewer_stack = QStackedWidget()
+        self.submission_viewer_stack.setMinimumHeight(400)
+        
+        # Text viewer for extracted text
+        self.review_submission_viewer = QTextEdit()
+        self.review_submission_viewer.setReadOnly(True)
+        self.review_submission_viewer.setPlainText("Select a submission to view its content...")
+        self.submission_viewer_stack.addWidget(self.review_submission_viewer)
+        
+        # Web viewer for rendered documents (PDFs, converted Word docs)
+        if WEB_ENGINE_AVAILABLE:
+            self.review_document_viewer = QWebEngineView()
+            
+            # Apply custom CSS to style the web view scrollbars
+            scrollbar_css = """
+            QWebEngineView {
+                background-color: white;
+            }
+            """
+            self.review_document_viewer.setStyleSheet(scrollbar_css)
+            
+            # Inject CSS for web content scrollbars using JavaScript
+            web_scrollbar_js = """
+            var style = document.createElement('style');
+            style.textContent = `
+                ::-webkit-scrollbar {
+                    width: 12px;
+                    height: 12px;
+                }
+                ::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 6px;
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: #c1c1c1;
+                    border-radius: 6px;
+                    border: 1px solid #f1f1f1;
+                }
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #a8a8a8;
+                }
+                ::-webkit-scrollbar-corner {
+                    background: #f1f1f1;
+                }
+            `;
+            document.head.appendChild(style);
+            """
+            
+            # Inject the scrollbar styling when the page loads
+            self.review_document_viewer.loadFinished.connect(
+                lambda success: self.on_document_load_finished(success, web_scrollbar_js)
+            )
+            
+            # Add load started handler for debugging
+            self.review_document_viewer.loadStarted.connect(
+                lambda: print("DEBUG: QWebEngineView load started")
+            )
+            
+            self.submission_viewer_stack.addWidget(self.review_document_viewer)
+        else:
+            self.review_document_viewer = None
+        
+        submission_layout.addWidget(self.submission_viewer_stack)
+        
+        # View mode selector
+        view_mode_layout = QHBoxLayout()
+        view_mode_layout.addWidget(QLabel("View Mode:"))
+        
+        if WEB_ENGINE_AVAILABLE:
+            self.view_mode_rendered_btn = QPushButton("🖼️ Rendered")
+            self.view_mode_rendered_btn.setCheckable(True)
+            self.view_mode_rendered_btn.setChecked(True)  # Default to rendered view
+            self.view_mode_rendered_btn.setToolTip("View rendered document (PDFs, converted Word docs)")
+            self.view_mode_rendered_btn.clicked.connect(lambda: self.switch_view_mode("rendered"))
+            view_mode_layout.addWidget(self.view_mode_rendered_btn)
+        
+        self.view_mode_text_btn = QPushButton("📄 Text")
+        self.view_mode_text_btn.setCheckable(True)
+        self.view_mode_text_btn.setChecked(False if WEB_ENGINE_AVAILABLE else True)  # Only checked if no web engine
+        self.view_mode_text_btn.setToolTip("View extracted text content")
+        self.view_mode_text_btn.clicked.connect(lambda: self.switch_view_mode("text"))
+        view_mode_layout.addWidget(self.view_mode_text_btn)
+        
+        if WEB_ENGINE_AVAILABLE:
+            # Create button group for exclusive selection
+            self.view_mode_group = QButtonGroup()
+            self.view_mode_group.addButton(self.view_mode_rendered_btn)
+            self.view_mode_group.addButton(self.view_mode_text_btn)
+        else:
+            self.view_mode_rendered_btn = None
+            self.view_mode_group = None
+        
+        view_mode_layout.addStretch()
+        submission_layout.addLayout(view_mode_layout)
+        
+        left_layout.addWidget(submission_group)
+        
+        # Right panel: Editable comments and score (1/3 width)
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        
+        # Score editing section
+        score_group = QGroupBox("📊 Score")
+        score_layout = QVBoxLayout(score_group)
+        
+        score_input_layout = QHBoxLayout()
+        score_input_layout.addWidget(QLabel("Points:"))
+        
+        # Create score input with separate max score display
+        score_container = QWidget()
+        score_container_layout = QHBoxLayout(score_container)
+        score_container_layout.setContentsMargins(0, 0, 0, 0)
+        score_container_layout.setSpacing(8)  # Small gap between score box and max score text
+        
+        # Use QLineEdit for the editable score part - standalone design
+        self.review_score_entry = QLineEdit()
+        self.review_score_entry.setPlaceholderText("0")
+        self.review_score_entry.setText("0")
+        self.review_score_entry.setMaximumWidth(80)  # Wider for standalone box
+        self.review_score_entry.textChanged.connect(self.review_score_changed)
+        
+        # Create a separate label for the max score (to the right, not connected)
+        self.review_max_score_display = QLabel("/ 100")
+        self.review_max_score_display.setStyleSheet("""
+            QLabel {
+                color: #6c757d;
+                font-size: 11pt;
+                font-style: italic;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+        
+        # Apply initial styling to the score entry
+        self.review_score_entry.setStyleSheet("""
+            QLineEdit {
+                border: 2px solid #ced4da;
+                border-radius: 6px;
+                padding: 8px 10px;
+                background-color: white;
+                font-size: 11pt;
+                font-weight: normal;
+                color: #495057;
+                min-height: 16px;
+                max-height: 16px;
+            }
+            QLineEdit:focus {
+                border-color: #80bdff;
+                box-shadow: 0px 0px 0px 0.2rem rgba(0, 123, 255, 0.25);
+                outline: 0;
+                background-color: #fff;
+            }
+        """)
+        
+        # Connect focus events for dynamic styling
+        self.review_score_entry.focusInEvent = lambda event: self.update_score_focus_style(True, event)
+        self.review_score_entry.focusOutEvent = lambda event: self.update_score_focus_style(False, event)
+        
+        # Add both parts to the container with spacing
+        score_container_layout.addWidget(self.review_score_entry)
+        score_container_layout.addWidget(self.review_max_score_display)
+        
+        # Initially hide max score display until we know if max score is available
+        self.review_max_score_display.hide()
+        
+        score_input_layout.addWidget(score_container)
+        score_input_layout.addStretch()
+        
+        score_layout.addLayout(score_input_layout)
+        right_layout.addWidget(score_group)
+        
+        # Comments editing section
+        comments_group = QGroupBox("💭 Comments & Feedback")
+        comments_layout = QVBoxLayout(comments_group)
+        
+        # Comment editor
+        self.review_comments_editor = QTextEdit()
+        self.review_comments_editor.setPlaceholderText("Enter feedback comments here...")
+        self.review_comments_editor.setMinimumHeight(300)
+        self.review_comments_editor.textChanged.connect(self.review_comments_changed)
+        comments_layout.addWidget(self.review_comments_editor)
+        
+        # Comment editor controls
+        comment_controls_layout = QHBoxLayout()
+        
+        self.review_clear_btn = QPushButton("🗑️ Clear")
+        self.review_clear_btn.setToolTip("Clear all comments")
+        self.review_clear_btn.clicked.connect(self.review_clear_comments)
+        comment_controls_layout.addWidget(self.review_clear_btn)
+        
+        self.review_restore_btn = QPushButton("↻ Restore AI Comments")
+        self.review_restore_btn.setToolTip("Restore original AI comments")
+        self.review_restore_btn.clicked.connect(self.review_restore_ai_comments)
+        comment_controls_layout.addWidget(self.review_restore_btn)
+        
+        comment_controls_layout.addStretch()
+        
+        comments_layout.addLayout(comment_controls_layout)
+        right_layout.addWidget(comments_group)
+        
+        # Add panels to splitter
+        splitter.addWidget(left_panel)
+        splitter.addWidget(right_panel)
+        
+        # Set initial sizes (2/3 for left, 1/3 for right)
+        splitter.setSizes([400, 200])
+        
+        content_layout.addWidget(splitter)
+        
+        # Save controls at bottom
+        save_group = QGroupBox("💾 Save Changes")
+        save_layout = QHBoxLayout(save_group)
+        
+        self.review_save_btn = QPushButton("💾 Save Current")
+        self.review_save_btn.setToolTip("Save changes to current submission")
+        self.review_save_btn.clicked.connect(self.review_save_current)
+        self.review_save_btn.setEnabled(False)
+        save_layout.addWidget(self.review_save_btn)
+        
+        self.review_save_all_btn = QPushButton("💾 Save All Changes")
+        self.review_save_all_btn.setToolTip("Save all pending changes to spreadsheet")
+        self.review_save_all_btn.clicked.connect(self.review_save_all_changes)
+        save_layout.addWidget(self.review_save_all_btn)
+        
+        save_layout.addStretch()
+        
+        # Changes indicator
+        self.review_changes_label = QLabel("No unsaved changes")
+        self.review_changes_label.setStyleSheet("color: #666; font-style: italic;")
+        save_layout.addWidget(self.review_changes_label)
+        
+        content_layout.addWidget(save_group)
+        
+        # Set the content widget in the scroll area
+        scroll_area.setWidget(content_widget)
+        
+        # Add scroll area to the main tab layout
+        tab_layout.addWidget(scroll_area)
+        
+        # Initialize review data
+        self.review_data = {}
+        self.review_current_index = 0
+        self.review_spreadsheet_path = review_spreadsheet_path
+        self.review_submission_folder = submission_folder_path
+        self.review_unsaved_changes = set()  # Track submissions with unsaved changes
+        self.review_original_data = {}  # Store original AI comments for restore function
+        
+        # Initialize default view mode - start with rendered view if available
+        if WEB_ENGINE_AVAILABLE:
+            print(f"DEBUG: Setting default view to rendered mode (stack index 1)")
+            self.submission_viewer_stack.setCurrentIndex(1)  # Start with rendered view
+        else:
+            print(f"DEBUG: Web engine not available, using text mode (stack index 0)")
+            self.submission_viewer_stack.setCurrentIndex(0)  # Fallback to text view
+        
+        # Load data
+        self.load_review_data()
+        
+        return tab
+    
     def setup_window(self):
         """Setup window properties"""
-        self.setWindowTitle("DuckGrade Canvas Integration - DuckWorks Educational Suite")
+        self.setWindowTitle("DuckWorks Educational Suite - Multi-Tool Interface")
         
         # Set duck icon
         if Path("assets/icons8-flying-duck-48.png").exists():
             self.setWindowIcon(QIcon("assets/icons8-flying-duck-48.png"))
         
-        # Set custom icon for API Connections tab
-        if Path("assets/network_outlined.png").exists():
-            self.tab_widget.setTabIcon(0, QIcon("assets/network_outlined.png"))
+        # Home tab uses emoji house icon (no custom .png icon)
         
         self.center_window()
         
@@ -1902,6 +2521,9 @@ class DuckGradeCanvasGUI(QMainWindow):
         if not self.validate_step1_inputs():
             return
         
+        # Hide Review Tab if visible from previous session
+        self.hide_review_tab()
+        
         # Disable button during processing
         self.step1_button.setEnabled(False)
         self.step1_button.setText("🔄 Running Step 1...")
@@ -1914,6 +2536,10 @@ class DuckGradeCanvasGUI(QMainWindow):
         assignment_index = self.assignment_combo.currentIndex()
         assignment_id = self.assignment_combo.itemData(assignment_index)
         assignment_name = self.assignment_combo.currentText()
+        
+        # Store assignment/course info for Review Tab
+        self.current_assignment_name = assignment_name
+        self.current_course_name = course_name
         
         # Determine rubric settings
         use_canvas_rubric = self.canvas_rubric_radio.isChecked()
@@ -2026,6 +2652,11 @@ class DuckGradeCanvasGUI(QMainWindow):
             if review_file and os.path.exists(review_file):
                 self.log_two_step(f"✓ Review spreadsheet created: {os.path.basename(review_file)}")
                 spreadsheet_status = "✅ Review spreadsheet is ready"
+                
+                # Show the Review Tab
+                submission_folder = results.get('submission_folder', results['folder_path'])
+                self.show_review_tab(review_file, submission_folder)
+                
             else:
                 self.log_two_step("⚠️ Review spreadsheet was not created or not found")
                 spreadsheet_status = "⚠️ Review spreadsheet missing - check logs"
@@ -2062,8 +2693,10 @@ class DuckGradeCanvasGUI(QMainWindow):
         message = QLabel(f"✅ Step 1 completed successfully!\n\n"
                         f"• Graded {len(results.get('grading_results', {}))} submissions\n"
                         f"• Results saved to: {results['folder_path']}\n"
-                        f"• Review spreadsheet created: {results.get('review_file', 'N/A')}\n\n"
-                        f"Next: Review the results and run Step 2 to upload grades.")
+                        f"• Review spreadsheet created: {results.get('review_file', 'N/A')}\n"
+                        f"• Review Tab opened for easy editing\n\n"
+                        f"Use the Review Tab to view submissions and edit scores/comments.\n"
+                        f"When finished, run Step 2 to upload grades.")
         message.setWordWrap(True)
         layout.addWidget(message)
         
@@ -2179,6 +2812,1098 @@ class DuckGradeCanvasGUI(QMainWindow):
         )
         if file_path:
             self.instructor_config_entry.setText(file_path)
+    
+    # ========================================
+    # Review Tab Functionality Methods
+    # ========================================
+    
+    def show_review_tab(self, review_spreadsheet_path, submission_folder_path):
+        """Show the Review Tab after Step 1 completion"""
+        if not self.review_tab_visible:
+            # Create the review tab
+            self.review_tab = self.create_review_tab(review_spreadsheet_path, submission_folder_path)
+            
+            # Add the review tab after the two-step tab (position 2)
+            self.tab_widget.insertTab(2, self.review_tab, "👁️ Review")
+            self.review_tab_visible = True
+            
+            # Switch to the review tab
+            self.tab_widget.setCurrentIndex(2)
+            
+            self.log_two_step("✅ Review Tab opened - you can now review and edit the graded submissions")
+    
+    def hide_review_tab(self):
+        """Hide the Review Tab when starting a new grading session"""
+        if self.review_tab_visible:
+            # Find and remove the review tab
+            for i in range(self.tab_widget.count()):
+                if self.tab_widget.tabText(i) == "👁️ Review":
+                    self.tab_widget.removeTab(i)
+                    break
+            
+            self.review_tab_visible = False
+            self.review_tab = None
+    
+    def load_review_data(self):
+        """Load data from the review spreadsheet"""
+        try:
+            import pandas as pd
+            import os
+            
+            if not os.path.exists(self.review_spreadsheet_path):
+                QMessageBox.warning(self, "File Not Found", 
+                                  f"Review spreadsheet not found: {self.review_spreadsheet_path}")
+                return
+            
+            # Read the spreadsheet
+            df = pd.read_excel(self.review_spreadsheet_path)
+            
+            # Debug: Print column names and first few rows
+            print(f"DEBUG: Spreadsheet columns: {list(df.columns)}")
+            print(f"DEBUG: First few rows:")
+            print(df.head())
+            
+            # Extract assignment information from first row if available
+            if len(df) > 0:
+                assignment_name = getattr(self, 'current_assignment_name', 'Unknown Assignment')
+                course_name = getattr(self, 'current_course_name', 'Unknown Course')
+                self.review_assignment_info.setText(
+                    f"Assignment: {assignment_name} | Course: {course_name} | "
+                    f"Total Submissions: {len(df)}"
+                )
+            
+            # Store the data
+            self.review_data = {}
+            self.review_original_data = {}
+            
+            for index, row in df.iterrows():
+                # Map to actual spreadsheet column names based on debug output
+                student_id = str(row.get('Canvas_User_ID', row.get('Student ID', row.get('student_id', row.get('ID', f'student_{index}')))))
+                
+                # Get student name from actual column
+                student_name = str(row.get('Student_Name', 
+                                         row.get('Student Name', 
+                                               row.get('student_name', 
+                                                     row.get('Name', f'Student {index + 1}')))))
+                
+                # Get score from AI_Score column
+                score = row.get('AI_Score', row.get('Score', row.get('score', row.get('Points', 0))))
+                
+                # Get comments from AI_Comments column
+                comments = str(row.get('AI_Comments', 
+                                     row.get('Comments', 
+                                           row.get('comments', 
+                                                 row.get('Feedback', 
+                                                       row.get('feedback', ''))))))
+                
+                # Try different file column names - submission files might not be in spreadsheet
+                submission_file = str(row.get('Submission_File', 
+                                            row.get('Submission File', 
+                                                  row.get('submission_file', 
+                                                        row.get('File', 
+                                                              row.get('filename', ''))))))
+                
+                # If no file column, try to construct filename from student name or ID
+                if not submission_file or submission_file == 'nan' or submission_file == '':
+                    # Try common naming patterns for downloaded files
+                    possible_names = [
+                        f"{student_name.replace(' ', '_')}.pdf",
+                        f"{student_name.replace(' ', '_')}.docx",
+                        f"{student_name.replace(' ', '_')}.odt",
+                        f"{student_name.replace(' ', '_')}.txt",
+                        f"{student_id}.pdf",
+                        f"{student_id}.docx",
+                        f"{student_id}.odt",
+                        f"{student_id}.txt"
+                    ]
+                    print(f"DEBUG: No file column found for {student_name}, will search for common file patterns")
+                    submission_file = ""  # Will be resolved during file loading
+                
+                print(f"DEBUG: Row {index}: ID={student_id}, Name={student_name}, Score={score}, File={submission_file}")
+                
+                # Store current data
+                self.review_data[student_id] = {
+                    'student_name': student_name,
+                    'score': score,
+                    'comments': comments,
+                    'submission_file': submission_file,
+                    'original_score': score,
+                    'original_comments': comments
+                }
+                
+                # Store original AI data for restore function
+                self.review_original_data[student_id] = {
+                    'score': score,
+                    'comments': comments
+                }
+            
+            # Populate the submission dropdown
+            self.review_submission_combo.clear()
+            for student_id, data in self.review_data.items():
+                display_text = f"{data['student_name']} (ID: {student_id})"
+                self.review_submission_combo.addItem(display_text, student_id)
+            
+            # Update progress
+            total_submissions = len(self.review_data)
+            self.review_progress_label.setText(f"1 of {total_submissions}")
+            
+            # Enable navigation if we have submissions
+            if total_submissions > 0:
+                self.review_current_index = 0
+                self.review_next_btn.setEnabled(total_submissions > 1)
+                self.review_submission_combo.setCurrentIndex(0)
+                self.load_current_submission()
+            
+            # Try to determine max score from assignment or spreadsheet data
+            try:
+                # Look for Max_Score column in the first row
+                if len(df) > 0:
+                    first_row = df.iloc[0]
+                    max_score = first_row.get('Max_Score', first_row.get('Points_Possible', 
+                                            first_row.get('Maximum_Score', None)))
+                    try:
+                        if max_score is not None:
+                            self.review_max_score = int(max_score)
+                        else:
+                            self.review_max_score = None
+                    except (ValueError, TypeError):
+                        self.review_max_score = None
+                else:
+                    self.review_max_score = None
+            except:
+                self.review_max_score = None
+            
+            # Update the max score display in the score field
+            if hasattr(self, 'review_max_score_display'):
+                if self.review_max_score is not None:
+                    self.review_max_score_display.setText(f"/ {self.review_max_score}")
+                    self.review_max_score_display.show()
+                else:
+                    self.review_max_score_display.hide()
+                
+                # Update styling to match visibility
+                self.update_score_field_styling()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error Loading Data", 
+                               f"Failed to load review data: {str(e)}")
+    
+    def load_current_submission(self):
+        """Load the currently selected submission"""
+        if not self.review_data:
+            return
+        
+        # Get current selection
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index < 0:
+            return
+        
+        student_id = self.review_submission_combo.itemData(current_index)
+        if not student_id or student_id not in self.review_data:
+            return
+        
+        data = self.review_data[student_id]
+        
+        # Update score
+        self.review_score_entry.setText(str(int(data['score'])))
+        
+        # Update comments (block signals to avoid triggering change detection)
+        self.review_comments_editor.blockSignals(True)
+        self.review_comments_editor.setPlainText(data['comments'])
+        self.review_comments_editor.blockSignals(False)
+        
+        # Load submission content
+        self.load_submission_content(data['submission_file'])
+        
+        # Update navigation buttons
+        total_submissions = len(self.review_data)
+        current_pos = current_index + 1
+        
+        # With wraparound navigation, enable buttons when there are multiple submissions
+        self.review_prev_btn.setEnabled(total_submissions > 1)
+        self.review_next_btn.setEnabled(total_submissions > 1)
+        self.review_progress_label.setText(f"{current_pos} of {total_submissions}")
+        
+        # Update current index
+        self.review_current_index = current_index
+        
+        # Check if this submission has unsaved changes
+        self.update_save_button_state()
+    
+    def on_document_load_finished(self, success, web_scrollbar_js):
+        """Handle document load completion with error checking."""
+        print(f"DEBUG: Document load finished. Success: {success}")
+        if success:
+            # Inject scrollbar styling on successful load
+            self.review_document_viewer.page().runJavaScript(web_scrollbar_js)
+        else:
+            print("DEBUG: Document load failed")
+    
+    def load_submission_content(self, submission_file):
+        """Load and display submission content from student's specific submission folder"""
+        try:
+            # Get current student info
+            current_index = self.review_submission_combo.currentIndex()
+            student_id = self.review_submission_combo.itemData(current_index) if current_index >= 0 else None
+            current_student_data = self.review_data.get(student_id, {}) if student_id else {}
+            student_name = current_student_data.get('student_name', '')
+            
+            print(f"DEBUG: Loading submissions for student: {student_name} (ID: {student_id})")
+            print(f"DEBUG: Base submission folder: '{self.review_submission_folder}'")
+            
+            # Find the student's specific submission folder using the Student_XXX_YYYY pattern
+            submissions_folder = os.path.join(self.review_submission_folder, 'submissions')
+            print(f"DEBUG: Looking for student folders in: {submissions_folder}")
+            
+            student_submission_folder = None
+            if os.path.exists(submissions_folder):
+                # Look for folders matching Student_XXX_YYYY pattern containing this student's ID
+                for folder_name in os.listdir(submissions_folder):
+                    folder_path = os.path.join(submissions_folder, folder_name)
+                    if os.path.isdir(folder_path):
+                        # Check if this folder contains the student ID
+                        if f"_{student_id}" in folder_name or student_id in folder_name:
+                            student_submission_folder = folder_path
+                            print(f"DEBUG: Found student submission folder: {student_submission_folder}")
+                            break
+            
+            if not student_submission_folder:
+                # Try alternative: look for folders with student name patterns
+                if os.path.exists(submissions_folder):
+                    name_parts = student_name.lower().replace(' ', '_').split('_')
+                    for folder_name in os.listdir(submissions_folder):
+                        folder_path = os.path.join(submissions_folder, folder_name)
+                        if os.path.isdir(folder_path):
+                            folder_lower = folder_name.lower()
+                            # Check if any part of the student name is in the folder name
+                            if any(part in folder_lower for part in name_parts if len(part) > 2):
+                                student_submission_folder = folder_path
+                                print(f"DEBUG: Found student submission folder by name pattern: {student_submission_folder}")
+                                break
+            
+            if not student_submission_folder:
+                self.review_file_info.setText(f"No submission folder found for {student_name}")
+                self.review_submission_viewer.setPlainText(f"No submission folder found for {student_name} (ID: {student_id}).\n\nLooked in: {submissions_folder}\n\nExpected pattern: Student_XXX_{student_id}")
+                print(f"DEBUG: No submission folder found for student {student_name}")
+                return
+            
+            # Get all submission files in the student's folder
+            submission_files = []
+            supported_extensions = ['.pdf', '.docx', '.odt', '.txt', '.doc', '.py', '.java', '.cpp', '.c', '.js', '.html', '.css', '.md', '.rtf']
+            
+            for file_name in os.listdir(student_submission_folder):
+                file_path = os.path.join(student_submission_folder, file_name)
+                if os.path.isfile(file_path):
+                    file_ext = os.path.splitext(file_name)[1].lower()
+                    if file_ext in supported_extensions:
+                        submission_files.append(file_path)
+            
+            print(f"DEBUG: Found {len(submission_files)} submission files: {[os.path.basename(f) for f in submission_files]}")
+            
+            # Initialize submission navigation if not already done
+            if not hasattr(self, 'current_submission_files'):
+                self.current_submission_files = []
+                self.current_submission_index = 0
+            
+            self.current_submission_files = submission_files
+            self.current_submission_index = 0
+            
+            # Load the first file or show message if no files
+            if submission_files:
+                self.load_current_submission_file()
+            else:
+                # No files found - check for text submission in submission data
+                self.load_text_submission_fallback(student_submission_folder)
+                
+        except Exception as e:
+            self.review_file_info.setText(f"Error loading submissions for {student_name}")
+            self.review_submission_viewer.setPlainText(f"Error loading submissions: {str(e)}")
+            print(f"DEBUG: Error in load_submission_content: {e}")
+    
+    def load_current_submission_file(self):
+        """Load the currently selected submission file"""
+        if not self.current_submission_files or self.current_submission_index >= len(self.current_submission_files):
+            return
+            
+        current_file = self.current_submission_files[self.current_submission_index]
+        file_name = os.path.basename(current_file)
+        
+        try:
+            # Clear previous content first
+            self.review_submission_viewer.clear()
+            if WEB_ENGINE_AVAILABLE and self.review_document_viewer:
+                self.review_document_viewer.setHtml("")
+            
+            # Update file info 
+            total_files = len(self.current_submission_files)
+            file_size = os.path.getsize(current_file)
+            self.review_file_info.setText(f"File: {file_name} ({file_size:,} bytes)")
+            
+            # Update navigation controls
+            if total_files > 1:
+                # Show navigation buttons and counter
+                self.review_prev_file_btn.show()
+                self.review_next_file_btn.show()
+                self.review_file_counter.show()
+                self.review_file_counter.setText(f"{self.current_submission_index + 1} of {total_files}")
+                
+                # Enable/disable buttons based on position
+                self.review_prev_file_btn.setEnabled(self.current_submission_index > 0)
+                self.review_next_file_btn.setEnabled(self.current_submission_index < total_files - 1)
+            else:
+                # Hide navigation controls for single files
+                self.review_prev_file_btn.hide()
+                self.review_next_file_btn.hide()
+                self.review_file_counter.hide()
+            
+            # Determine file type and update view mode availability
+            file_ext = os.path.splitext(file_name)[1].lower()
+            can_render_natively = file_ext in ['.pdf'] and WEB_ENGINE_AVAILABLE
+            can_convert_to_html = file_ext in ['.docx', '.odt'] and WEB_ENGINE_AVAILABLE
+            
+            # Update view mode buttons availability
+            if self.view_mode_rendered_btn:
+                self.view_mode_rendered_btn.setEnabled(can_render_natively or can_convert_to_html)
+                if not (can_render_natively or can_convert_to_html) and self.submission_viewer_stack.currentIndex() == 1:
+                    # Force to text mode if rendered view isn't available and we're in rendered mode
+                    self.switch_view_mode("text")
+            
+            # Load content based on current view mode
+            current_view_index = self.submission_viewer_stack.currentIndex()
+            
+            if current_view_index == 0:  # Text view
+                content = self.read_file_content(current_file, file_ext)
+                self.review_submission_viewer.setPlainText(content)
+            elif current_view_index == 1 and WEB_ENGINE_AVAILABLE:  # Rendered view
+                print(f"DEBUG: In rendered view mode for file: {file_name}")
+                print(f"DEBUG: can_render_natively={can_render_natively}, file_ext={file_ext}")
+                print(f"DEBUG: can_convert_to_html={can_convert_to_html}")
+                if can_render_natively and file_ext == '.pdf':
+                    # Load PDF using PDF.js for better compatibility
+                    print(f"DEBUG: Loading PDF file: {current_file}")
+                    print(f"DEBUG: review_document_viewer exists: {self.review_document_viewer is not None}")
+                    
+                    if self.review_document_viewer:
+                        try:
+                            # Read PDF file and encode as base64
+                            import base64
+                            with open(current_file, 'rb') as f:
+                                pdf_data = f.read()
+                                pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
+                                
+                            # Create HTML with PDF.js viewer
+                            html_with_pdf = f"""
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <meta charset="UTF-8">
+                                <title>PDF Viewer</title>
+                                <style>
+                                    body {{ 
+                                        margin: 0; 
+                                        padding: 0; 
+                                        font-family: Arial, sans-serif;
+                                        background-color: #f0f0f0;
+                                        display: flex;
+                                        flex-direction: column;
+                                        height: 100vh;
+                                    }}
+                                    .pdf-header {{
+                                        background-color: #333;
+                                        color: white;
+                                        padding: 10px;
+                                        font-size: 14px;
+                                        flex-shrink: 0;
+                                    }}
+                                    .pdf-container {{
+                                        flex-grow: 1;
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        background-color: #525659;
+                                    }}
+                                    canvas {{
+                                        border: 1px solid #ccc;
+                                        background-color: white;
+                                        max-width: 100%;
+                                        max-height: 100%;
+                                    }}
+                                    .controls {{
+                                        background-color: #444;
+                                        color: white;
+                                        padding: 8px;
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        gap: 10px;
+                                        flex-shrink: 0;
+                                    }}
+                                    button {{
+                                        background-color: #666;
+                                        color: white;
+                                        border: none;
+                                        padding: 5px 10px;
+                                        border-radius: 3px;
+                                        cursor: pointer;
+                                    }}
+                                    button:hover {{
+                                        background-color: #777;
+                                    }}
+                                    button:disabled {{
+                                        background-color: #555;
+                                        color: #999;
+                                        cursor: not-allowed;
+                                    }}
+                                    .page-info {{
+                                        color: #ccc;
+                                    }}
+                                    .fallback {{
+                                        padding: 20px;
+                                        text-align: center;
+                                        background-color: white;
+                                        margin: 20px;
+                                        border-radius: 8px;
+                                    }}
+                                    .download-link {{
+                                        display: inline-block;
+                                        background-color: #007ACC;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        text-decoration: none;
+                                        border-radius: 4px;
+                                        margin-top: 10px;
+                                    }}
+                                </style>
+                                <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+                            </head>
+                            <body>
+                                <div class="pdf-header">
+                                    📄 {os.path.basename(current_file)}
+                                </div>
+                                <div class="controls">
+                                    <button id="prev-page">◀ Previous</button>
+                                    <span class="page-info">
+                                        Page <span id="page-num">1</span> of <span id="page-count">-</span>
+                                    </span>
+                                    <button id="next-page">Next ▶</button>
+                                    <button id="zoom-in">🔍+</button>
+                                    <button id="zoom-out">🔍-</button>
+                                    <span class="page-info">Zoom: <span id="zoom-level">100%</span></span>
+                                </div>
+                                <div class="pdf-container">
+                                    <canvas id="pdf-canvas"></canvas>
+                                </div>
+                                
+                                <script>
+                                    // PDF.js setup
+                                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                                    
+                                    const pdfData = 'data:application/pdf;base64,{pdf_base64}';
+                                    let pdfDoc = null;
+                                    let pageNum = 1;
+                                    let pageRendering = false;
+                                    let pageNumPending = null;
+                                    let scale = 1.0;
+                                    const canvas = document.getElementById('pdf-canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    
+                                    // Load the PDF
+                                    pdfjsLib.getDocument(pdfData).promise.then(function(pdfDoc_) {{
+                                        pdfDoc = pdfDoc_;
+                                        document.getElementById('page-count').textContent = pdfDoc.numPages;
+                                        renderPage(pageNum);
+                                    }}).catch(function(error) {{
+                                        console.error('Error loading PDF:', error);
+                                        document.querySelector('.pdf-container').innerHTML = `
+                                            <div class="fallback">
+                                                <h3>PDF Loading Error</h3>
+                                                <p>Unable to display PDF file using PDF.js</p>
+                                                <p>Error: ${{error.message}}</p>
+                                                <a href="data:application/pdf;base64,{pdf_base64}" 
+                                                   download="{os.path.basename(current_file)}" 
+                                                   class="download-link">Download PDF</a>
+                                            </div>
+                                        `;
+                                    }});
+                                    
+                                    function renderPage(num) {{
+                                        pageRendering = true;
+                                        pdfDoc.getPage(num).then(function(page) {{
+                                            const viewport = page.getViewport({{scale: scale}});
+                                            canvas.height = viewport.height;
+                                            canvas.width = viewport.width;
+                                            
+                                            const renderContext = {{
+                                                canvasContext: ctx,
+                                                viewport: viewport
+                                            }};
+                                            
+                                            const renderTask = page.render(renderContext);
+                                            renderTask.promise.then(function() {{
+                                                pageRendering = false;
+                                                if (pageNumPending !== null) {{
+                                                    renderPage(pageNumPending);
+                                                    pageNumPending = null;
+                                                }}
+                                            }});
+                                        }});
+                                        
+                                        document.getElementById('page-num').textContent = num;
+                                        updateButtons();
+                                    }}
+                                    
+                                    function queueRenderPage(num) {{
+                                        if (pageRendering) {{
+                                            pageNumPending = num;
+                                        }} else {{
+                                            renderPage(num);
+                                        }}
+                                    }}
+                                    
+                                    function updateButtons() {{
+                                        document.getElementById('prev-page').disabled = pageNum <= 1;
+                                        document.getElementById('next-page').disabled = pageNum >= pdfDoc.numPages;
+                                        document.getElementById('zoom-level').textContent = Math.round(scale * 100) + '%';
+                                    }}
+                                    
+                                    // Event listeners
+                                    document.getElementById('prev-page').addEventListener('click', function() {{
+                                        if (pageNum <= 1) return;
+                                        pageNum--;
+                                        queueRenderPage(pageNum);
+                                    }});
+                                    
+                                    document.getElementById('next-page').addEventListener('click', function() {{
+                                        if (pageNum >= pdfDoc.numPages) return;
+                                        pageNum++;
+                                        queueRenderPage(pageNum);
+                                    }});
+                                    
+                                    document.getElementById('zoom-in').addEventListener('click', function() {{
+                                        scale *= 1.2;
+                                        queueRenderPage(pageNum);
+                                    }});
+                                    
+                                    document.getElementById('zoom-out').addEventListener('click', function() {{
+                                        scale /= 1.2;
+                                        queueRenderPage(pageNum);
+                                    }});
+                                </script>
+                            </body>
+                            </html>
+                            """
+                            print("DEBUG: Setting HTML with PDF.js viewer")
+                            self.review_document_viewer.setHtml(html_with_pdf)
+                            print("DEBUG: HTML with PDF.js viewer set successfully")
+                            
+                        except Exception as e:
+                            print(f"DEBUG: Error loading PDF: {e}")
+                            # Fallback error message
+                            error_html = f"""
+                            <html><body style="font-family: Arial; padding: 20px; text-align: center;">
+                                <h3 style="color: #d32f2f;">PDF Loading Error</h3>
+                                <p>Unable to display PDF file: <strong>{os.path.basename(current_file)}</strong></p>
+                                <p style="color: #666;">File path: {current_file}</p>
+                                <p style="color: #666;">Error: {str(e)}</p>
+                                <p>Please ensure the file exists and is a valid PDF document.</p>
+                            </body></html>
+                            """
+                            self.review_document_viewer.setHtml(error_html)
+                    else:
+                        print(f"DEBUG: ERROR - review_document_viewer is None!")
+                elif can_convert_to_html and file_ext in ['.docx', '.odt']:
+                    # Convert to HTML and display
+                    print(f"DEBUG: Converting {file_ext} file to HTML")
+                    html_content = self.convert_document_to_html(current_file, file_ext)
+                    if self.review_document_viewer:
+                        self.review_document_viewer.setHtml(html_content)
+                        print(f"DEBUG: HTML content set in QWebEngineView")
+                else:
+                    # Fallback to text view
+                    print(f"DEBUG: Falling back to text view for {file_ext}")
+                    content = self.read_file_content(current_file, file_ext)
+                    self.review_submission_viewer.setPlainText(content)
+                    self.switch_view_mode("text")
+            
+            print(f"DEBUG: Loaded file {self.current_submission_index + 1}/{total_files}: {file_name}, view mode: {'rendered' if current_view_index == 1 else 'text'}")
+            
+        except Exception as e:
+            self.review_file_info.setText(f"Error loading: {file_name}")
+            self.review_submission_viewer.setPlainText(f"Error loading file: {str(e)}")
+            print(f"DEBUG: Error loading file: {e}")
+    
+    def convert_document_to_html(self, file_path, file_ext):
+        """Convert Word/ODT documents to HTML for web rendering"""
+        try:
+            if file_ext == '.docx':
+                # Convert Word document to HTML
+                try:
+                    from docx import Document
+                    doc = Document(file_path)
+                    
+                    html_content = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                            .paragraph { margin-bottom: 12px; }
+                            .heading { font-weight: bold; font-size: 1.1em; margin-top: 20px; margin-bottom: 10px; }
+                        </style>
+                    </head>
+                    <body>
+                    """
+                    
+                    for paragraph in doc.paragraphs:
+                        text = paragraph.text.strip()
+                        if text:
+                            style_class = "heading" if paragraph.style.name.startswith('Heading') else "paragraph"
+                            html_content += f'<div class="{style_class}">{text}</div>\n'
+                    
+                    html_content += "</body></html>"
+                    return html_content
+                    
+                except ImportError:
+                    return "Word document viewing requires python-docx. Please install it to view .docx content."
+                except Exception as e:
+                    return f"Error converting Word document: {str(e)}"
+                    
+            elif file_ext == '.odt':
+                # Convert ODT document to HTML
+                try:
+                    from odf.opendocument import load
+                    from odf.text import P
+                    
+                    doc = load(file_path)
+                    
+                    html_content = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                            .paragraph { margin-bottom: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                    """
+                    
+                    paragraphs = doc.getElementsByType(P)
+                    for paragraph in paragraphs:
+                        text = ""
+                        for node in paragraph.childNodes:
+                            if hasattr(node, 'data'):
+                                text += node.data
+                            elif hasattr(node, 'firstChild') and node.firstChild:
+                                text += node.firstChild.data if hasattr(node.firstChild, 'data') else str(node.firstChild)
+                        
+                        text = text.strip()
+                        if text:
+                            html_content += f'<div class="paragraph">{text}</div>\n'
+                    
+                    html_content += "</body></html>"
+                    return html_content
+                    
+                except ImportError:
+                    return "OpenDocument viewing requires odfpy. Please install it to view .odt content."
+                except Exception as e:
+                    return f"Error converting OpenDocument: {str(e)}"
+            
+            else:
+                return f"Cannot convert {file_ext} files to HTML"
+                
+        except Exception as e:
+            return f"Error in document conversion: {str(e)}"
+    
+    def load_text_submission_fallback(self, student_folder):
+        """Load text submission data if no files are found"""
+        try:
+            # Look for submission data files (JSON, etc.) that might contain text submissions
+            data_files = [f for f in os.listdir(student_folder) 
+                         if f.lower().endswith(('.json', '.txt')) and 'submission' in f.lower()]
+            
+            if data_files:
+                # Try to read submission data
+                data_file = os.path.join(student_folder, data_files[0])
+                with open(data_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.review_file_info.setText(f"Text submission data: {data_files[0]}")
+                self.review_submission_viewer.setPlainText(f"Text Submission Data:\n\n{content}")
+                print(f"DEBUG: Loaded text submission data from {data_files[0]}")
+            else:
+                self.review_file_info.setText("No submission files found")
+                self.review_submission_viewer.setPlainText("No submission files or text submissions found for this student.")
+                print(f"DEBUG: No submission files or data found")
+                
+        except Exception as e:
+            self.review_file_info.setText("No submissions found")
+            self.review_submission_viewer.setPlainText(f"No submission content available. Error checking for text submissions: {str(e)}")
+    
+    def read_file_content(self, file_path, file_ext):
+        """Read and return file content based on file type"""
+        try:
+            if file_ext in ['.txt', '.py', '.java', '.cpp', '.c', '.js', '.html', '.css', '.md']:
+                # Plain text files
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        return f.read()
+                except UnicodeDecodeError:
+                    with open(file_path, 'r', encoding='latin1') as f:
+                        return f.read()
+                        
+            elif file_ext == '.pdf':
+                # PDF files - extract text with improved formatting
+                try:
+                    import PyPDF2
+                    with open(file_path, 'rb') as f:
+                        pdf_reader = PyPDF2.PdfReader(f)
+                        text_content = ""
+                        for page_num, page in enumerate(pdf_reader.pages):
+                            page_text = page.extract_text()
+                            if page_text:
+                                # Improve text formatting by adding proper line breaks
+                                lines = page_text.split('\n')
+                                formatted_lines = []
+                                for line in lines:
+                                    line = line.strip()
+                                    if line:
+                                        # Add space if line doesn't end with punctuation and next char is letter
+                                        if (formatted_lines and 
+                                            not formatted_lines[-1].endswith(('.', '!', '?', ':', ';', '-')) and 
+                                            line[0].islower()):
+                                            formatted_lines[-1] += ' ' + line
+                                        else:
+                                            formatted_lines.append(line)
+                                
+                                text_content += '\n'.join(formatted_lines)
+                                if page_num < len(pdf_reader.pages) - 1:
+                                    text_content += "\n\n--- Page Break ---\n\n"
+                    
+                    if text_content.strip():
+                        return text_content
+                    else:
+                        return "PDF content could not be extracted or is empty."
+                except ImportError:
+                    return "PDF viewing requires PyPDF2. Please install it to view PDF content."
+                except Exception as e:
+                    return f"Error reading PDF: {str(e)}"
+                    
+            elif file_ext == '.docx':
+                # Word documents
+                try:
+                    import docx
+                    doc = docx.Document(file_path)
+                    content = ""
+                    for paragraph in doc.paragraphs:
+                        content += paragraph.text + "\n"
+                    return content if content.strip() else "Word document appears to be empty."
+                except ImportError:
+                    return "Word document viewing requires python-docx. Please install it to view .docx content."
+                except Exception as e:
+                    return f"Error reading Word document: {str(e)}"
+                    
+            elif file_ext == '.odt':
+                # OpenDocument Text files
+                try:
+                    from odf.opendocument import load
+                    from odf.text import P
+                    
+                    doc = load(file_path)
+                    content = ""
+                    paragraphs = doc.getElementsByType(P)
+                    for paragraph in paragraphs:
+                        para_text = ""
+                        for node in paragraph.childNodes:
+                            if hasattr(node, 'data'):
+                                para_text += node.data
+                            elif hasattr(node, 'childNodes'):
+                                for child in node.childNodes:
+                                    if hasattr(child, 'data'):
+                                        para_text += child.data
+                        if para_text.strip():
+                            content += para_text + "\n"
+                    
+                    return content if content.strip() else "OpenDocument file appears to be empty."
+                except ImportError:
+                    return "OpenDocument viewing requires odfpy. Please install it to view .odt content.\nInstall with: pip install odfpy"
+                except Exception as e:
+                    return f"Error reading OpenDocument file: {str(e)}"
+                    
+            else:
+                # Unsupported file type
+                return (f"File type '{file_ext}' is not directly viewable.\n\n"
+                       f"Supported formats: .txt, .py, .java, .cpp, .c, .js, .html, .css, .md, .pdf, .docx, .odt\n\n"
+                       f"File path: {file_path}")
+                
+        except Exception as e:
+            return f"Error reading file: {str(e)}"
+    
+    def review_previous_submission_file(self):
+        """Navigate to previous submission file for current student"""
+        if hasattr(self, 'current_submission_files') and self.current_submission_files:
+            if self.current_submission_index > 0:
+                self.current_submission_index -= 1
+                self.load_current_submission_file()
+    
+    def review_next_submission_file(self):
+        """Navigate to next submission file for current student"""
+        if hasattr(self, 'current_submission_files') and self.current_submission_files:
+            if self.current_submission_index < len(self.current_submission_files) - 1:
+                self.current_submission_index += 1
+                self.load_current_submission_file()
+    
+    def switch_view_mode(self, mode):
+        """Switch between text and rendered view modes"""
+        print(f"DEBUG: Switching to {mode} view mode")
+        if mode == "text":
+            self.submission_viewer_stack.setCurrentIndex(0)
+            self.view_mode_text_btn.setChecked(True)
+            if self.view_mode_rendered_btn:
+                self.view_mode_rendered_btn.setChecked(False)
+            print(f"DEBUG: Switched to text view (stack index 0)")
+        elif mode == "rendered" and WEB_ENGINE_AVAILABLE:
+            self.submission_viewer_stack.setCurrentIndex(1)
+            self.view_mode_text_btn.setChecked(False)
+            if self.view_mode_rendered_btn:
+                self.view_mode_rendered_btn.setChecked(True)
+            print(f"DEBUG: Switched to rendered view (stack index 1)")
+            # Reload current file in rendered mode
+            self.load_current_submission_file()
+        else:
+            print(f"DEBUG: Cannot switch to {mode} - WEB_ENGINE_AVAILABLE={WEB_ENGINE_AVAILABLE}")
+    
+    def review_previous_submission(self):
+        """Navigate to previous submission with wraparound"""
+        current_index = self.review_submission_combo.currentIndex()
+        total = self.review_submission_combo.count()
+        if total > 1:
+            if current_index > 0:
+                self.review_submission_combo.setCurrentIndex(current_index - 1)
+            else:
+                # Wrap around to last submission
+                self.review_submission_combo.setCurrentIndex(total - 1)
+    
+    def review_next_submission(self):
+        """Navigate to next submission with wraparound"""
+        current_index = self.review_submission_combo.currentIndex()
+        total = self.review_submission_combo.count()
+        if total > 1:
+            if current_index < total - 1:
+                self.review_submission_combo.setCurrentIndex(current_index + 1)
+            else:
+                # Wrap around to first submission
+                self.review_submission_combo.setCurrentIndex(0)
+    
+    def review_submission_changed(self):
+        """Handle submission selection change"""
+        self.load_current_submission()
+    
+    def review_score_changed(self):
+        """Handle score change"""
+        self.mark_current_as_changed()
+        self.update_save_button_state()
+    
+    def review_comments_changed(self):
+        """Handle comments change"""
+        self.mark_current_as_changed()
+        self.update_save_button_state()
+    
+    def update_score_focus_style(self, has_focus, event):
+        """Update the score field styling when it gains/loses focus"""
+        from PyQt6.QtWidgets import QLineEdit
+        
+        # Call the original focus event method
+        if has_focus:
+            QLineEdit.focusInEvent(self.review_score_entry, event)
+        else:
+            QLineEdit.focusOutEvent(self.review_score_entry, event)
+        
+        # Update styling based on focus state
+        self.update_score_field_styling(has_focus)
+    
+    def update_score_field_styling(self, has_focus=False):
+        """Update the score field styling - simple standalone box design"""
+        if not hasattr(self, 'review_score_entry'):
+            return
+            
+        # Simple standalone styling - no complex two-part design needed
+        focus_border = "#80bdff" if has_focus else "#ced4da"
+        focus_shadow = "0px 0px 0px 0.2rem rgba(0, 123, 255, 0.25)" if has_focus else "none"
+        
+        self.review_score_entry.setStyleSheet(f"""
+            QLineEdit {{
+                border: 2px solid {focus_border};
+                border-radius: 6px;
+                padding: 8px 10px;
+                background-color: white;
+                font-size: 11pt;
+                font-weight: normal;
+                color: #495057;
+                min-height: 16px;
+                max-height: 16px;
+            }}
+            QLineEdit:focus {{
+                border-color: #80bdff;
+                box-shadow: {focus_shadow};
+                outline: 0;
+                background-color: #fff;
+            }}
+        """)
+    
+    def review_open_submission_directory(self):
+        """Open the current submission's directory in file explorer"""
+        if not hasattr(self, 'loaded_submission_rows') or not self.loaded_submission_rows:
+            QMessageBox.warning(self, "Warning", "No submissions loaded.")
+            return
+        
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index < 0 or current_index >= len(self.loaded_submission_rows):
+            QMessageBox.warning(self, "Warning", "No submission selected.")
+            return
+        
+        current_row = self.loaded_submission_rows[current_index]
+        submission_path = current_row.get('Submission_Path', '')
+        
+        if not submission_path or not os.path.exists(submission_path):
+            QMessageBox.warning(self, "Warning", "Submission directory not found.")
+            return
+        
+        # Open the directory containing the submission
+        submission_dir = os.path.dirname(submission_path)
+        if os.path.exists(submission_dir):
+            import subprocess
+            subprocess.Popen(['explorer', submission_dir])
+        else:
+            QMessageBox.warning(self, "Warning", "Submission directory not found.")
+    
+    def mark_current_as_changed(self):
+        """Mark the current submission as having unsaved changes"""
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index >= 0:
+            student_id = self.review_submission_combo.itemData(current_index)
+            if student_id:
+                self.review_unsaved_changes.add(student_id)
+                self.update_changes_label()
+    
+    def update_save_button_state(self):
+        """Update the save button enabled state"""
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index >= 0:
+            student_id = self.review_submission_combo.itemData(current_index)
+            has_changes = student_id in self.review_unsaved_changes
+            self.review_save_btn.setEnabled(has_changes)
+    
+    def update_changes_label(self):
+        """Update the changes indicator label"""
+        num_changes = len(self.review_unsaved_changes)
+        if num_changes == 0:
+            self.review_changes_label.setText("No unsaved changes")
+            self.review_changes_label.setStyleSheet("color: #666; font-style: italic;")
+        else:
+            self.review_changes_label.setText(f"{num_changes} submission(s) with unsaved changes")
+            self.review_changes_label.setStyleSheet("color: #dc3545; font-weight: bold;")
+    
+    def review_clear_comments(self):
+        """Clear all comments for current submission"""
+        reply = QMessageBox.question(self, "Clear Comments", 
+                                   "Are you sure you want to clear all comments for this submission?",
+                                   QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.review_comments_editor.clear()
+    
+    def review_restore_ai_comments(self):
+        """Restore original AI comments for current submission"""
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index < 0:
+            return
+        
+        student_id = self.review_submission_combo.itemData(current_index)
+        if not student_id or student_id not in self.review_original_data:
+            return
+        
+        reply = QMessageBox.question(self, "Restore AI Comments", 
+                                   "Are you sure you want to restore the original AI comments and score?",
+                                   QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            original_data = self.review_original_data[student_id]
+            
+            # Restore score
+            self.review_score_entry.setText(str(int(original_data['score'])))
+            
+            # Restore comments
+            self.review_comments_editor.blockSignals(True)
+            self.review_comments_editor.setPlainText(original_data['comments'])
+            self.review_comments_editor.blockSignals(False)
+            
+            # Mark as changed since we're restoring to original
+            self.mark_current_as_changed()
+    
+    def review_save_current(self):
+        """Save changes to current submission"""
+        current_index = self.review_submission_combo.currentIndex()
+        if current_index < 0:
+            return
+        
+        student_id = self.review_submission_combo.itemData(current_index)
+        if not student_id or student_id not in self.review_data:
+            return
+        
+        # Update the in-memory data
+        try:
+            score_text = self.review_score_entry.text().strip()
+            score_value = int(score_text) if score_text else 0
+            self.review_data[student_id]['score'] = score_value
+        except ValueError:
+            # If score text is not a valid integer, default to 0
+            self.review_data[student_id]['score'] = 0
+        self.review_data[student_id]['comments'] = self.review_comments_editor.toPlainText()
+        
+        # Remove from unsaved changes
+        self.review_unsaved_changes.discard(student_id)
+        
+        # Update UI
+        self.update_save_button_state()
+        self.update_changes_label()
+        
+        # Show confirmation
+        student_name = self.review_data[student_id]['student_name']
+        QMessageBox.information(self, "Saved", f"Changes saved for {student_name}")
+    
+    def review_save_all_changes(self):
+        """Save all changes back to the spreadsheet"""
+        try:
+            import pandas as pd
+            
+            # Read current spreadsheet
+            df = pd.read_excel(self.review_spreadsheet_path)
+            
+            # Update the dataframe with our changes
+            for index, row in df.iterrows():
+                student_id = str(row.get('Student ID', f'student_{index}'))
+                
+                if student_id in self.review_data:
+                    df.at[index, 'Score'] = self.review_data[student_id]['score']
+                    df.at[index, 'Comments'] = self.review_data[student_id]['comments']
+            
+            # Save back to spreadsheet
+            df.to_excel(self.review_spreadsheet_path, index=False)
+            
+            # Clear all unsaved changes
+            self.review_unsaved_changes.clear()
+            self.update_save_button_state()
+            self.update_changes_label()
+            
+            QMessageBox.information(self, "All Changes Saved", 
+                                  f"All changes have been saved to:\n{self.review_spreadsheet_path}")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", 
+                               f"Failed to save changes to spreadsheet:\n{str(e)}")
 
 
 def main():
@@ -2202,3 +3927,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

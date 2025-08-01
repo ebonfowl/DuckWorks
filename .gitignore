@@ -290,6 +290,9 @@ debug_output/
 test_grading/
 experimental/
 
+# Development Ideas and Design Documents
+grader_ideas/
+
 # Batch files (keep only the main Canvas launcher)
 start_duckgrade.bat
 start_duckgrade_gui.bat

@@ -1175,6 +1175,8 @@ class TwoStepCanvasGrading:
                 detailed_feedback.append(f"{name}: {criterion_score:.1f}/{criterion_max}")
                 if feedback:
                     detailed_feedback.append(f"  - {feedback}")
+                # Add extra line break after each criterion block for better readability
+                detailed_feedback.append("")
             
             overall_feedback = result.get('overall_feedback', '')
             if overall_feedback:
