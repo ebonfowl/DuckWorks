@@ -1,0 +1,93 @@
+{
+  "assignment_title": "Final Project Rubric",
+  "total_points": 20.0,
+  "criteria": {
+    "Length": {
+      "points": 5.0,
+      "description": "",
+      "ratings": [
+        {
+          "points": 5.0,
+          "description": "Excellent",
+          "long_description": "2\u20133 full pages; follows all formatting instructions"
+        },
+        {
+          "points": 3.0,
+          "description": "Satisfactory",
+          "long_description": "Slightly short/long or minor formatting issues"
+        },
+        {
+          "points": 1.0,
+          "description": "Needs Improvement",
+          "long_description": "Significantly off in length or formatting"
+        }
+      ]
+    },
+    "Writing Quality": {
+      "points": 5.0,
+      "description": "",
+      "ratings": [
+        {
+          "points": 5.0,
+          "description": "Excellent",
+          "long_description": "Clear, concise, well-organized; free of grammar errors"
+        },
+        {
+          "points": 3.0,
+          "description": "Satisfactory",
+          "long_description": "Generally clear; minor grammar or structure issues"
+        },
+        {
+          "points": 1.0,
+          "description": "Needs Improvement",
+          "long_description": "Poor organization or frequent grammar issues"
+        }
+      ]
+    },
+    "Analysis Quality": {
+      "points": 5.0,
+      "description": "",
+      "ratings": [
+        {
+          "points": 5.0,
+          "description": "Excellent",
+          "long_description": "Deep, thoughtful, and accurate analysis with clear logic"
+        },
+        {
+          "points": 3.0,
+          "description": "Satisfactory",
+          "long_description": "Some analysis with moderate depth or minor errors"
+        },
+        {
+          "points": 1.0,
+          "description": "Needs Improvement",
+          "long_description": "Superficial or flawed analysis with unclear reasoning"
+        }
+      ]
+    },
+    "Citations/References": {
+      "points": 5.0,
+      "description": "",
+      "ratings": [
+        {
+          "points": 5.0,
+          "description": "Excellent",
+          "long_description": "All factual claims are supported with credible references"
+        },
+        {
+          "points": 3.0,
+          "description": "Satisfactory",
+          "long_description": "Most claims are supported; minor citation errors"
+        },
+        {
+          "points": 1.0,
+          "description": "Needs Improvement",
+          "long_description": "Few or no references; major issues with credibility or formatting"
+        }
+      ]
+    }
+  },
+  "grading_instructions": "Grade this assignment based on the Canvas rubric criteria below.",
+  "canvas_rubric_id": 18288,
+  "canvas_rubric_title": "Final Project Rubric"
+}

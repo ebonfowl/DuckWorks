@@ -1,0 +1,50 @@
+
+CANVAS GRADING - TWO-STEP PROCESS
+================================
+
+Assignment: Final Project
+Created: 2025-07-31 04:03:19
+
+STEP 1 - COMPLETED ✓
+===================
+- Downloaded all submissions from Canvas
+- Anonymized student names for ChatGPT processing
+- Graded all papers using AI with your rubric
+- Created this review folder with all materials
+
+STEP 2 - MANUAL REVIEW (DO THIS NOW)
+===================================
+1. Open the review spreadsheet: Final Project_REVIEW.xlsx
+
+2. Review and edit the following columns (highlighted in yellow):
+   - Final_Grade: Adjust the AI-suggested grade if needed
+   - Final_Comments: Edit the feedback comments as desired
+   - Notes: Add any private notes for your records
+
+3. Save the spreadsheet when done
+
+4. Run Step 2 in the Canvas grading tool to upload to Canvas
+
+FOLDER CONTENTS
+===============
+- submissions/: All student papers (with anonymized names)
+- results/: Review spreadsheet and reports
+- student_mapping.json: Maps anonymous names to real names (keep secure!)
+- rubric_used.json: Copy of the rubric used for grading
+- assignment_metadata.json: Canvas assignment details
+
+IMPORTANT NOTES
+===============
+- Student names were anonymized when sent to ChatGPT for privacy
+- The review spreadsheet shows real names for your review
+- Only edit the yellow-highlighted columns in the spreadsheet
+- Don't modify the Canvas_User_ID column (needed for upload)
+- Keep the student_mapping.json file secure
+
+NEXT STEPS
+==========
+1. Review and edit the grade spreadsheet
+2. Run Step 2 in the Canvas Grading Tool
+3. Check Canvas gradebook to verify uploads
+
+Questions? Check the main README.md file for detailed instructions.

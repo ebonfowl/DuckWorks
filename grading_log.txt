@@ -1,0 +1,507 @@
+2025-07-28 18:57:04,281 - INFO - Rubric loaded successfully from sample_rubric.json
+2025-07-28 18:57:04,292 - INFO - Loaded paper for John_Smith
+2025-07-28 18:57:04,302 - INFO - Loaded paper for Mike_Davis
+2025-07-28 18:57:04,311 - INFO - Loaded paper for Sarah_Johnson
+2025-07-28 18:57:04,311 - INFO - Loaded 3 student papers
+2025-07-29 15:41:30,540 - INFO - Rubric loaded successfully from D:/College of Idaho/GradingAgent/sample_rubric.json
+2025-07-29 15:41:30,554 - INFO - Loaded paper for John_Smith
+2025-07-29 15:41:30,567 - INFO - Loaded paper for Mike_Davis
+2025-07-29 15:41:30,578 - INFO - Loaded paper for Sarah_Johnson
+2025-07-29 15:41:30,579 - INFO - Loaded 3 student papers
+2025-07-29 15:42:12,418 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 15:42:12,440 - INFO - Graded paper for John_Smith
+2025-07-29 15:42:39,734 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 15:42:39,740 - INFO - Graded paper for Mike_Davis
+2025-07-29 15:43:03,345 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 15:43:03,346 - INFO - Graded paper for Sarah_Johnson
+2025-07-29 15:43:03,347 - INFO - Completed grading 3 papers
+2025-07-29 15:44:48,453 - INFO - Results exported to D:/College of Idaho/GradingAgent/sample_papers/Test1_Grades.xlsx
+2025-07-29 19:41:39,482 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 19:41:39,502 - INFO - Fetched current pricing for 5 models
+2025-07-29 19:41:39,978 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 19:41:39,988 - INFO - Fetched 45 chat models from OpenAI with current pricing
+2025-07-29 19:53:36,932 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 19:53:36,975 - INFO - Fetched current pricing for 5 models
+2025-07-29 19:53:39,752 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 19:53:39,757 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:03:35,070 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:03:35,080 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:03:35,354 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:03:35,364 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:05:46,774 - ERROR - Error loading secure config: 
+2025-07-29 21:06:30,577 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:06:30,587 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:06:31,011 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:06:31,026 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:19:58,049 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:19:58,064 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:19:58,564 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:19:58,578 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:37:50,450 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:37:50,455 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:37:50,811 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:37:50,821 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:38:37,259 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_213814\canvas_rubric.json
+2025-07-29 21:38:37,259 - ERROR - Error loading rubric: expected str, bytes or os.PathLike object, not NoneType
+2025-07-29 21:42:17,063 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:42:17,073 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:42:17,466 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:42:17,476 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:43:12,421 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_214254\canvas_rubric.json
+2025-07-29 21:45:03,234 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:45:03,239 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:45:03,818 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:45:03,828 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:45:40,852 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_214523\canvas_rubric.json
+2025-07-29 21:48:46,286 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:48:46,292 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:48:46,719 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:48:46,729 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:49:26,027 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_214908\canvas_rubric.json
+2025-07-29 21:49:34,473 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:49:34,476 - INFO - Graded paper for Student_001
+2025-07-29 21:49:42,980 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:49:42,980 - INFO - Graded paper for Student_002
+2025-07-29 21:49:53,382 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:49:53,387 - INFO - Graded paper for Student_003
+2025-07-29 21:50:05,689 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:05,689 - INFO - Graded paper for Student_004
+2025-07-29 21:50:15,886 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:15,886 - INFO - Graded paper for Student_005
+2025-07-29 21:50:24,723 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:24,723 - INFO - Graded paper for Student_006
+2025-07-29 21:50:37,770 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:37,795 - INFO - Graded paper for Student_007
+2025-07-29 21:50:48,510 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:48,510 - INFO - Graded paper for Student_008
+2025-07-29 21:50:56,818 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:50:56,823 - INFO - Graded paper for Student_009
+2025-07-29 21:51:10,285 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:51:10,292 - INFO - Graded paper for Student_010
+2025-07-29 21:54:32,869 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:54:32,874 - INFO - Fetched current pricing for 5 models
+2025-07-29 21:54:33,170 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 21:54:33,180 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 21:55:25,310 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_215507\canvas_rubric.json
+2025-07-29 21:55:34,807 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:55:34,812 - INFO - Graded paper for Student_001
+2025-07-29 21:55:46,072 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:55:46,072 - INFO - Graded paper for Student_002
+2025-07-29 21:55:55,704 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:55:55,704 - INFO - Graded paper for Student_003
+2025-07-29 21:56:06,524 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:06,529 - INFO - Graded paper for Student_004
+2025-07-29 21:56:15,400 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:15,402 - INFO - Graded paper for Student_005
+2025-07-29 21:56:22,627 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:22,631 - INFO - Graded paper for Student_006
+2025-07-29 21:56:29,387 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:29,392 - INFO - Graded paper for Student_007
+2025-07-29 21:56:45,643 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:45,653 - INFO - Graded paper for Student_008
+2025-07-29 21:56:54,392 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:56:54,410 - INFO - Graded paper for Student_009
+2025-07-29 21:57:04,294 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 21:57:04,299 - INFO - Graded paper for Student_010
+2025-07-29 22:01:19,740 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:01:19,745 - INFO - Fetched current pricing for 5 models
+2025-07-29 22:01:20,196 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 22:01:20,205 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 22:02:09,465 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_220151\canvas_rubric.json
+2025-07-29 22:02:20,545 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:02:20,550 - INFO - Graded paper for Student_001
+2025-07-29 22:02:28,184 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:02:28,188 - INFO - Graded paper for Student_002
+2025-07-29 22:02:36,777 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:02:36,777 - INFO - Graded paper for Student_003
+2025-07-29 22:02:45,871 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:02:45,876 - INFO - Graded paper for Student_004
+2025-07-29 22:02:53,754 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:02:53,759 - INFO - Graded paper for Student_005
+2025-07-29 22:03:02,129 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:03:02,139 - INFO - Graded paper for Student_006
+2025-07-29 22:03:10,078 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:03:10,080 - INFO - Graded paper for Student_007
+2025-07-29 22:03:17,495 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:03:17,501 - INFO - Graded paper for Student_008
+2025-07-29 22:03:26,844 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:03:26,844 - INFO - Graded paper for Student_009
+2025-07-29 22:03:35,495 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:03:35,500 - INFO - Graded paper for Student_010
+2025-07-29 22:06:06,735 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:06:06,743 - INFO - Fetched current pricing for 5 models
+2025-07-29 22:06:06,936 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 22:06:06,956 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 22:06:51,606 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_220634\canvas_rubric.json
+2025-07-29 22:07:00,324 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:00,329 - INFO - Graded paper for Student_001
+2025-07-29 22:07:08,595 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:08,595 - INFO - Graded paper for Student_002
+2025-07-29 22:07:16,674 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:16,674 - INFO - Graded paper for Student_003
+2025-07-29 22:07:28,597 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:28,602 - INFO - Graded paper for Student_004
+2025-07-29 22:07:38,179 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:38,182 - INFO - Graded paper for Student_005
+2025-07-29 22:07:47,861 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:07:47,900 - INFO - Graded paper for Student_006
+2025-07-29 22:08:00,328 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:08:00,333 - INFO - Graded paper for Student_007
+2025-07-29 22:08:09,140 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:08:09,140 - INFO - Graded paper for Student_008
+2025-07-29 22:08:20,056 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:08:20,056 - INFO - Graded paper for Student_009
+2025-07-29 22:08:29,073 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:08:29,076 - INFO - Graded paper for Student_010
+2025-07-29 22:11:23,302 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:11:23,302 - INFO - Fetched current pricing for 5 models
+2025-07-29 22:11:23,513 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 22:11:23,518 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 22:12:00,430 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_221142\canvas_rubric.json
+2025-07-29 22:12:08,761 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:08,761 - INFO - Graded paper for Student_001
+2025-07-29 22:12:16,806 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:16,811 - INFO - Graded paper for Student_002
+2025-07-29 22:12:24,801 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:24,806 - INFO - Graded paper for Student_003
+2025-07-29 22:12:32,631 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:32,631 - INFO - Graded paper for Student_004
+2025-07-29 22:12:43,370 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:43,376 - INFO - Graded paper for Student_005
+2025-07-29 22:12:50,999 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:51,004 - INFO - Graded paper for Student_006
+2025-07-29 22:12:59,100 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:12:59,100 - INFO - Graded paper for Student_007
+2025-07-29 22:13:08,404 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:13:08,409 - INFO - Graded paper for Student_008
+2025-07-29 22:13:17,844 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:13:17,849 - INFO - Graded paper for Student_009
+2025-07-29 22:13:27,102 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:13:27,106 - INFO - Graded paper for Student_010
+2025-07-29 22:24:13,552 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:24:13,557 - INFO - Fetched current pricing for 5 models
+2025-07-29 22:24:13,956 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 22:24:13,961 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 22:25:45,784 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_222431\canvas_rubric.json
+2025-07-29 22:25:57,839 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:25:57,839 - INFO - Graded paper for Student_001
+2025-07-29 22:26:08,970 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:26:08,978 - INFO - Graded paper for Student_002
+2025-07-29 22:26:18,918 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:26:18,918 - INFO - Graded paper for Student_003
+2025-07-29 22:26:29,769 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:26:29,769 - INFO - Graded paper for Student_004
+2025-07-29 22:26:40,265 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:26:40,265 - INFO - Graded paper for Student_005
+2025-07-29 22:26:50,826 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:26:50,831 - INFO - Graded paper for Student_006
+2025-07-29 22:27:00,477 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:00,482 - INFO - Graded paper for Student_007
+2025-07-29 22:27:09,897 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:09,902 - INFO - Graded paper for Student_008
+2025-07-29 22:27:19,956 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:19,961 - INFO - Graded paper for Student_009
+2025-07-29 22:27:31,369 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:31,369 - INFO - Graded paper for Student_010
+2025-07-29 22:27:40,353 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:40,353 - INFO - Graded paper for Student_012
+2025-07-29 22:27:50,135 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:27:50,135 - INFO - Graded paper for Student_013
+2025-07-29 22:28:00,146 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:00,151 - INFO - Graded paper for Student_014
+2025-07-29 22:28:11,441 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:11,441 - INFO - Graded paper for Student_015
+2025-07-29 22:28:20,429 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:20,429 - INFO - Graded paper for Student_016
+2025-07-29 22:28:31,208 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:31,208 - INFO - Graded paper for Student_017
+2025-07-29 22:28:41,720 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:41,720 - INFO - Graded paper for Student_018
+2025-07-29 22:28:56,164 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:28:56,167 - INFO - Graded paper for Student_019
+2025-07-29 22:29:07,672 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:29:07,678 - INFO - Graded paper for Student_020
+2025-07-29 22:29:20,533 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:29:20,535 - INFO - Graded paper for Student_021
+2025-07-29 22:29:32,441 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:29:32,441 - INFO - Graded paper for Student_022
+2025-07-29 22:29:43,488 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:29:43,488 - INFO - Graded paper for Student_023
+2025-07-29 22:29:53,858 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:29:53,858 - INFO - Graded paper for Student_024
+2025-07-29 22:30:09,063 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:30:09,095 - INFO - Graded paper for Student_025
+2025-07-29 22:30:21,068 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:30:21,068 - INFO - Graded paper for Student_026
+2025-07-29 22:30:34,951 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:30:34,957 - INFO - Graded paper for Student_027
+2025-07-29 22:30:44,772 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:30:44,777 - INFO - Graded paper for Student_028
+2025-07-29 22:30:56,886 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:30:56,886 - INFO - Graded paper for Student_029
+2025-07-29 22:31:08,615 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:31:08,615 - INFO - Graded paper for Student_030
+2025-07-29 22:31:21,978 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:31:21,978 - INFO - Graded paper for Student_031
+2025-07-29 22:31:33,169 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:31:33,174 - INFO - Graded paper for Student_033
+2025-07-29 22:31:43,763 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:31:43,763 - INFO - Graded paper for Student_034
+2025-07-29 22:31:53,840 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:31:53,867 - INFO - Graded paper for Student_035
+2025-07-29 22:32:06,666 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:32:06,674 - INFO - Graded paper for Student_036
+2025-07-29 22:32:20,433 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:32:20,440 - INFO - Graded paper for Student_037
+2025-07-29 22:32:29,600 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:32:29,616 - INFO - Graded paper for Student_038
+2025-07-29 22:36:37,992 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:36:38,034 - INFO - Fetched current pricing for 5 models
+2025-07-29 22:36:38,913 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 22:36:38,930 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 22:38:02,719 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_223658\canvas_rubric.json
+2025-07-29 22:38:12,776 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:12,777 - INFO - Graded paper for Student_001
+2025-07-29 22:38:24,450 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:24,481 - INFO - Graded paper for Student_002
+2025-07-29 22:38:31,858 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:31,861 - INFO - Graded paper for Student_003
+2025-07-29 22:38:41,335 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:41,343 - INFO - Graded paper for Student_004
+2025-07-29 22:38:52,539 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:52,542 - INFO - Graded paper for Student_005
+2025-07-29 22:38:58,903 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:38:58,912 - INFO - Graded paper for Student_006
+2025-07-29 22:39:07,923 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:07,924 - INFO - Graded paper for Student_007
+2025-07-29 22:39:18,464 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:18,465 - INFO - Graded paper for Student_008
+2025-07-29 22:39:27,602 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:27,604 - INFO - Graded paper for Student_009
+2025-07-29 22:39:33,979 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:33,980 - INFO - Graded paper for Student_010
+2025-07-29 22:39:42,283 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:42,321 - INFO - Graded paper for Student_012
+2025-07-29 22:39:51,318 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:39:51,321 - INFO - Graded paper for Student_013
+2025-07-29 22:40:00,160 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:00,165 - INFO - Graded paper for Student_014
+2025-07-29 22:40:11,812 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:11,813 - INFO - Graded paper for Student_015
+2025-07-29 22:40:20,187 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:20,188 - INFO - Graded paper for Student_016
+2025-07-29 22:40:34,447 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:34,448 - INFO - Graded paper for Student_017
+2025-07-29 22:40:45,567 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:45,568 - INFO - Graded paper for Student_018
+2025-07-29 22:40:55,002 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:40:55,004 - INFO - Graded paper for Student_019
+2025-07-29 22:41:03,936 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:03,953 - INFO - Graded paper for Student_020
+2025-07-29 22:41:11,356 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:11,357 - INFO - Graded paper for Student_021
+2025-07-29 22:41:18,787 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:18,792 - INFO - Graded paper for Student_022
+2025-07-29 22:41:28,642 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:28,648 - INFO - Graded paper for Student_023
+2025-07-29 22:41:36,270 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:36,272 - INFO - Graded paper for Student_024
+2025-07-29 22:41:44,755 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:44,771 - INFO - Graded paper for Student_025
+2025-07-29 22:41:53,370 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:41:53,384 - INFO - Graded paper for Student_026
+2025-07-29 22:42:00,755 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:00,759 - INFO - Graded paper for Student_027
+2025-07-29 22:42:07,602 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:07,605 - INFO - Graded paper for Student_028
+2025-07-29 22:42:14,590 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:14,598 - INFO - Graded paper for Student_029
+2025-07-29 22:42:23,510 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:23,511 - INFO - Graded paper for Student_030
+2025-07-29 22:42:31,751 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:31,753 - INFO - Graded paper for Student_031
+2025-07-29 22:42:38,755 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:38,757 - INFO - Graded paper for Student_033
+2025-07-29 22:42:47,266 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:47,274 - INFO - Graded paper for Student_034
+2025-07-29 22:42:54,046 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:42:54,048 - INFO - Graded paper for Student_035
+2025-07-29 22:43:01,506 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:43:01,509 - INFO - Graded paper for Student_036
+2025-07-29 22:43:10,416 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:43:10,424 - INFO - Graded paper for Student_037
+2025-07-29 22:43:20,271 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 22:43:20,272 - INFO - Graded paper for Student_038
+2025-07-29 23:35:26,316 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:35:26,321 - INFO - Fetched current pricing for 5 models
+2025-07-29 23:35:26,588 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 23:35:26,593 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 23:37:17,684 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_233603\canvas_rubric.json
+2025-07-29 23:37:25,493 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:37:25,498 - INFO - Graded paper for Student_001
+2025-07-29 23:37:32,824 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:37:32,824 - INFO - Graded paper for Student_002
+2025-07-29 23:37:38,990 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:37:38,990 - INFO - Graded paper for Student_003
+2025-07-29 23:37:46,289 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:37:46,291 - INFO - Graded paper for Student_004
+2025-07-29 23:37:53,816 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:37:53,816 - INFO - Graded paper for Student_005
+2025-07-29 23:38:01,134 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:01,134 - INFO - Graded paper for Student_006
+2025-07-29 23:38:08,163 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:08,163 - INFO - Graded paper for Student_007
+2025-07-29 23:38:15,541 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:15,541 - INFO - Graded paper for Student_008
+2025-07-29 23:38:23,265 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:23,265 - INFO - Graded paper for Student_009
+2025-07-29 23:38:30,048 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:30,058 - INFO - Graded paper for Student_010
+2025-07-29 23:38:37,648 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:37,663 - INFO - Graded paper for Student_011
+2025-07-29 23:38:47,024 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:47,024 - INFO - Graded paper for Student_012
+2025-07-29 23:38:54,093 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:38:54,098 - INFO - Graded paper for Student_013
+2025-07-29 23:39:00,250 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:00,260 - INFO - Graded paper for Student_014
+2025-07-29 23:39:08,161 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:08,166 - INFO - Graded paper for Student_015
+2025-07-29 23:39:16,064 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:16,069 - INFO - Graded paper for Student_016
+2025-07-29 23:39:23,375 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:23,380 - INFO - Graded paper for Student_017
+2025-07-29 23:39:30,127 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:30,127 - INFO - Graded paper for Student_018
+2025-07-29 23:39:37,757 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:37,762 - INFO - Graded paper for Student_019
+2025-07-29 23:39:43,390 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:43,395 - INFO - Graded paper for Student_020
+2025-07-29 23:39:49,584 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:49,584 - INFO - Graded paper for Student_021
+2025-07-29 23:39:55,631 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:39:55,631 - INFO - Graded paper for Student_022
+2025-07-29 23:40:05,057 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:05,067 - INFO - Graded paper for Student_023
+2025-07-29 23:40:12,759 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:12,759 - INFO - Graded paper for Student_024
+2025-07-29 23:40:19,542 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:19,552 - INFO - Graded paper for Student_025
+2025-07-29 23:40:31,040 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:31,044 - INFO - Graded paper for Student_026
+2025-07-29 23:40:39,153 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:39,153 - INFO - Graded paper for Student_027
+2025-07-29 23:40:47,087 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:47,092 - INFO - Graded paper for Student_028
+2025-07-29 23:40:55,793 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:40:55,793 - INFO - Graded paper for Student_029
+2025-07-29 23:41:05,172 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:05,185 - INFO - Graded paper for Student_030
+2025-07-29 23:41:15,166 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:15,181 - INFO - Graded paper for Student_031
+2025-07-29 23:41:23,803 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:23,803 - INFO - Graded paper for Student_033
+2025-07-29 23:41:31,921 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:31,921 - INFO - Graded paper for Student_034
+2025-07-29 23:41:40,051 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:40,056 - INFO - Graded paper for Student_035
+2025-07-29 23:41:48,656 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:48,661 - INFO - Graded paper for Student_036
+2025-07-29 23:41:56,051 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:41:56,056 - INFO - Graded paper for Student_037
+2025-07-29 23:42:08,411 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:42:08,421 - INFO - Graded paper for Student_038
+2025-07-29 23:54:11,809 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:54:11,814 - INFO - Fetched current pricing for 5 models
+2025-07-29 23:54:12,101 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-29 23:54:12,106 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-29 23:55:38,474 - INFO - Rubric loaded successfully from D:\College of Idaho\GradingAgent\Final_Project_20250729_235437\canvas_rubric.json
+2025-07-29 23:55:47,156 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:55:47,156 - INFO - Graded paper for Student_001
+2025-07-29 23:55:54,662 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:55:54,672 - INFO - Graded paper for Student_002
+2025-07-29 23:56:02,196 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:02,211 - INFO - Graded paper for Student_003
+2025-07-29 23:56:11,513 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:11,513 - INFO - Graded paper for Student_004
+2025-07-29 23:56:20,046 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:20,051 - INFO - Graded paper for Student_005
+2025-07-29 23:56:29,271 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:29,276 - INFO - Graded paper for Student_006
+2025-07-29 23:56:38,685 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:38,685 - INFO - Graded paper for Student_007
+2025-07-29 23:56:49,286 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:56:49,289 - INFO - Graded paper for Student_008
+2025-07-29 23:57:03,098 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:03,108 - INFO - Graded paper for Student_009
+2025-07-29 23:57:12,848 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:12,848 - INFO - Graded paper for Student_010
+2025-07-29 23:57:22,712 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:22,718 - INFO - Graded paper for Student_011
+2025-07-29 23:57:32,585 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:32,590 - INFO - Graded paper for Student_012
+2025-07-29 23:57:40,814 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:40,814 - INFO - Graded paper for Student_013
+2025-07-29 23:57:50,058 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:50,062 - INFO - Graded paper for Student_014
+2025-07-29 23:57:58,538 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:57:58,538 - INFO - Graded paper for Student_015
+2025-07-29 23:58:08,006 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:08,006 - INFO - Graded paper for Student_016
+2025-07-29 23:58:15,547 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:15,547 - INFO - Graded paper for Student_017
+2025-07-29 23:58:25,611 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:25,611 - INFO - Graded paper for Student_018
+2025-07-29 23:58:35,342 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:35,351 - INFO - Graded paper for Student_019
+2025-07-29 23:58:48,260 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:48,260 - INFO - Graded paper for Student_020
+2025-07-29 23:58:57,799 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:58:57,804 - INFO - Graded paper for Student_021
+2025-07-29 23:59:10,866 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:10,871 - INFO - Graded paper for Student_022
+2025-07-29 23:59:21,049 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:21,049 - INFO - Graded paper for Student_023
+2025-07-29 23:59:31,674 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:31,679 - INFO - Graded paper for Student_024
+2025-07-29 23:59:39,378 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:39,387 - INFO - Graded paper for Student_025
+2025-07-29 23:59:48,698 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:48,698 - INFO - Graded paper for Student_026
+2025-07-29 23:59:57,663 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-29 23:59:57,663 - INFO - Graded paper for Student_027
+2025-07-30 00:00:07,844 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:00:07,856 - INFO - Graded paper for Student_028
+2025-07-30 00:00:17,996 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:00:18,001 - INFO - Graded paper for Student_029
+2025-07-30 00:00:29,223 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:00:29,223 - INFO - Graded paper for Student_030
+2025-07-30 00:00:40,381 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:00:40,388 - INFO - Graded paper for Student_031
+2025-07-30 00:00:50,451 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:00:50,471 - INFO - Graded paper for Student_032
+2025-07-30 00:01:02,732 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:02,734 - INFO - Graded paper for Student_033
+2025-07-30 00:01:13,195 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:13,195 - INFO - Graded paper for Student_034
+2025-07-30 00:01:26,459 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:26,464 - INFO - Graded paper for Student_035
+2025-07-30 00:01:35,904 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:35,904 - INFO - Graded paper for Student_036
+2025-07-30 00:01:45,817 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:45,817 - INFO - Graded paper for Student_037
+2025-07-30 00:01:57,152 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 00:01:57,162 - INFO - Graded paper for Student_038
+2025-07-30 19:50:59,581 - ERROR - Error loading secure config: 'NoneType' object has no attribute 'encode'
+2025-07-30 19:56:45,250 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 19:56:45,255 - INFO - Fetched current pricing for 5 models
+2025-07-30 19:56:45,672 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-30 19:56:45,681 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-30 19:58:37,139 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-30 19:58:37,149 - INFO - Fetched current pricing for 5 models
+2025-07-30 19:58:37,491 - INFO - HTTP Request: GET https://api.openai.com/v1/models "HTTP/1.1 200 OK"
+2025-07-30 19:58:37,506 - INFO - Fetched 6 unique chat model families from OpenAI with current pricing
+2025-07-31 03:28:29,794 - INFO - Rubric loaded successfully from Final_Project_20250731_032016/canvas_rubric.json
+2025-07-31 03:28:39,202 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-07-31 03:28:39,227 - INFO - Graded paper for Test Student
+2025-07-31 19:24:12,396 - ERROR - Error loading secure config: Password input cancelled by user

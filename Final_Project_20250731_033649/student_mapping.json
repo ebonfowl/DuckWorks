@@ -1,0 +1,197 @@
+{
+  "name_map": {
+    "Student_001": {
+      "real_name": "Kahealani Figueira",
+      "user_id": 6672
+    },
+    "Student_002": {
+      "real_name": "Maxwell Anderson",
+      "user_id": 6728
+    },
+    "Student_003": {
+      "real_name": "Thomas Hobson",
+      "user_id": 6844
+    },
+    "Student_004": {
+      "real_name": "Isaiah Moultrie",
+      "user_id": 6867
+    },
+    "Student_005": {
+      "real_name": "David Alvarado",
+      "user_id": 7277
+    },
+    "Student_006": {
+      "real_name": "Rajkumar Yadav",
+      "user_id": 7546
+    },
+    "Student_007": {
+      "real_name": "Mauvorneen Aberasturi",
+      "user_id": 7553
+    },
+    "Student_008": {
+      "real_name": "Taylor Phelps",
+      "user_id": 7642
+    },
+    "Student_009": {
+      "real_name": "Zane Herway",
+      "user_id": 7660
+    },
+    "Student_010": {
+      "real_name": "Caden Young",
+      "user_id": 7670
+    },
+    "Student_011": {
+      "real_name": "Kate Cole",
+      "user_id": 7780
+    },
+    "Student_012": {
+      "real_name": "Shushanik Hayriyan",
+      "user_id": 7879
+    },
+    "Student_013": {
+      "real_name": "Alex Germer",
+      "user_id": 8433
+    },
+    "Student_014": {
+      "real_name": "Tarryn Forman",
+      "user_id": 8436
+    },
+    "Student_015": {
+      "real_name": "Reece Garey",
+      "user_id": 8440
+    },
+    "Student_016": {
+      "real_name": "Jackson Ingraham",
+      "user_id": 8483
+    },
+    "Student_017": {
+      "real_name": "Owen Rinker",
+      "user_id": 8490
+    },
+    "Student_018": {
+      "real_name": "Oclan Ryan",
+      "user_id": 8501
+    },
+    "Student_019": {
+      "real_name": "Mason Strong",
+      "user_id": 8511
+    },
+    "Student_020": {
+      "real_name": "John Chorlog",
+      "user_id": 8546
+    },
+    "Student_021": {
+      "real_name": "Brielle Fieuw",
+      "user_id": 8603
+    },
+    "Student_022": {
+      "real_name": "Alondra Osuna",
+      "user_id": 8640
+    },
+    "Student_023": {
+      "real_name": "Brooke Zimmermann",
+      "user_id": 8649
+    },
+    "Student_024": {
+      "real_name": "Doug Peoples",
+      "user_id": 8658
+    },
+    "Student_025": {
+      "real_name": "Amaia Mendive",
+      "user_id": 8676
+    },
+    "Student_026": {
+      "real_name": "Micah Mendiola",
+      "user_id": 8692
+    },
+    "Student_027": {
+      "real_name": "Linda Villegas",
+      "user_id": 8693
+    },
+    "Student_028": {
+      "real_name": "Hailey Rogers",
+      "user_id": 8725
+    },
+    "Student_029": {
+      "real_name": "Caden Campa",
+      "user_id": 8732
+    },
+    "Student_030": {
+      "real_name": "Corban Freese",
+      "user_id": 8777
+    },
+    "Student_031": {
+      "real_name": "Yarelis Murillo - Chacon",
+      "user_id": 8783
+    },
+    "Student_032": {
+      "real_name": "Jack Phipps",
+      "user_id": 8793
+    },
+    "Student_033": {
+      "real_name": "Joshua Speir",
+      "user_id": 8851
+    },
+    "Student_034": {
+      "real_name": "Kathryne Sturm",
+      "user_id": 9666
+    },
+    "Student_035": {
+      "real_name": "Nathan Ishaya",
+      "user_id": 9763
+    },
+    "Student_036": {
+      "real_name": "Olivia Lammey",
+      "user_id": 9779
+    },
+    "Student_037": {
+      "real_name": "Karissa Goff",
+      "user_id": 9869
+    },
+    "Student_038": {
+      "real_name": "Ann-Marie Stinar",
+      "user_id": 9946
+    }
+  },
+  "reverse_map": {
+    "Kahealani Figueira": "Student_001",
+    "Maxwell Anderson": "Student_002",
+    "Thomas Hobson": "Student_003",
+    "Isaiah Moultrie": "Student_004",
+    "David Alvarado": "Student_005",
+    "Rajkumar Yadav": "Student_006",
+    "Mauvorneen Aberasturi": "Student_007",
+    "Taylor Phelps": "Student_008",
+    "Zane Herway": "Student_009",
+    "Caden Young": "Student_010",
+    "Kate Cole": "Student_011",
+    "Shushanik Hayriyan": "Student_012",
+    "Alex Germer": "Student_013",
+    "Tarryn Forman": "Student_014",
+    "Reece Garey": "Student_015",
+    "Jackson Ingraham": "Student_016",
+    "Owen Rinker": "Student_017",
+    "Oclan Ryan": "Student_018",
+    "Mason Strong": "Student_019",
+    "John Chorlog": "Student_020",
+    "Brielle Fieuw": "Student_021",
+    "Alondra Osuna": "Student_022",
+    "Brooke Zimmermann": "Student_023",
+    "Doug Peoples": "Student_024",
+    "Amaia Mendive": "Student_025",
+    "Micah Mendiola": "Student_026",
+    "Linda Villegas": "Student_027",
+    "Hailey Rogers": "Student_028",
+    "Caden Campa": "Student_029",
+    "Corban Freese": "Student_030",
+    "Yarelis Murillo - Chacon": "Student_031",
+    "Jack Phipps": "Student_032",
+    "Joshua Speir": "Student_033",
+    "Kathryne Sturm": "Student_034",
+    "Nathan Ishaya": "Student_035",
+    "Olivia Lammey": "Student_036",
+    "Karissa Goff": "Student_037",
+    "Ann-Marie Stinar": "Student_038"
+  },
+  "created_at": "2025-07-31T03:37:51.627984"
+}

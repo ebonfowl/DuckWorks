@@ -1,0 +1,299 @@
+# DuckWorks Educational Automation Suite - Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.conda/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# PyCharm
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# OS Files
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Sensitive Information
+# API Keys and Credentials
+*.key
+*.pem
+*.p12
+.env
+.env.local
+.env.*.local
+secrets.json
+config/secrets.py
+credentials.json
+api_keys.txt
+
+# Canvas API tokens
+canvas_token.txt
+canvas_credentials.json
+
+# OpenAI API keys
+openai_key.txt
+openai_credentials.json
+
+# Application Specific
+# Grading outputs and temporary files
+*/results/*
+*/graded/*
+*/temp/*
+*/output/*
+*/downloads/*
+grading_output/
+temp_files/
+student_submissions/
+graded_papers/
+*.xlsx
+*.docx
+*.pdf
+!assets/*.pdf
+!docs/*.pdf
+!examples/*.pdf
+
+# Log files
+*.log
+logs/
+grading.log
+canvas.log
+debug.log
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with sensitive data
+config.ini
+settings.cfg
+local_config.py
+
+# Temporary directories
+tmp/
+temp/
+temporary/
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.dmg
+*.iso
+
+# Generated documentation
+docs/_build/
+docs/build/
+
+# Package files
+*.deb
+*.rpm
+
+# Node.js (if using any JavaScript tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+test_output/
+test_results/
+.coverage
+
+# Custom exclusions for DuckWorks Suite
+# Exclude example student submissions except samples
+student_examples/
+sample_submissions/!sample_*.pdf
+sample_submissions/!sample_*.docx
+
+# Exclude rubric files except templates
+rubrics/
+!rubrics/template_*.json
+!rubrics/sample_*.json
+
+# Exclude Canvas course data except examples
+course_data/
+!course_data/example_*.json
+
+# Development and debugging
+debug/
+debug_output/
+test_grading/
+experimental/
+
+# Batch files (keep only the main Canvas launcher)
+start_duckgrade.bat
+start_duckgrade_gui.bat
+start_duckgrade_gui_direct.bat
+start_duckgrade_direct.bat
+start_duckgrade_canvas.bat
+start_canvas*.bat
+start_local*.bat
+test_canvas_gui.bat
+activate_*.bat
+*.ps1
