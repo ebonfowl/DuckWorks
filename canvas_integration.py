@@ -621,7 +621,8 @@ class TwoStepCanvasGrading:
         safe_assignment_name = re.sub(r'[^\w\s-]', '', assignment_name).strip()
         safe_assignment_name = re.sub(r'[-\s]+', '_', safe_assignment_name)
         
-        assignment_folder = f"{safe_assignment_name}_{date_str}"
+        # Add GRADED suffix for gitignore pattern matching
+        assignment_folder = f"{safe_assignment_name}_{date_str}_GRADED"
         base_dir = os.path.join(os.getcwd(), assignment_folder)
         
         submissions_dir = os.path.join(base_dir, "submissions")

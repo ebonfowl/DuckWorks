@@ -183,6 +183,10 @@ Temporary Items
 secrets.json
 config/secrets.py
 credentials.json
+
+# Student Data and Graded Assignments (FERPA Protection)
+*_GRADED/
+*_GRADED
 api_keys.txt
 
 # Canvas API tokens
