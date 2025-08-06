@@ -20,6 +20,7 @@ import uuid
 import shutil
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+from pathlib import Path
 import time
 import pandas as pd
 import re
@@ -593,6 +594,193 @@ class TwoStepCanvasGrading:
         self.grading_agent = grading_agent
         self.anonymizer = StudentAnonymizer()
     
+    def step1_download_only(self, course_id: int, assignment_id: int, 
+                           assignment_name: str, rubric_path: str = None, 
+                           instructor_config_path: str = None, 
+                           use_canvas_rubric: bool = False,
+                           progress_callback=None, log_callback=None) -> Dict:
+        """
+        Step 1: Download submissions only (no grading), prepare for manual review
+        
+        Args:
+            course_id: Canvas course ID
+            assignment_id: Canvas assignment ID
+            assignment_name: Name of the assignment
+            rubric_path: Path to grading rubric JSON file (optional if using Canvas rubric)
+            instructor_config_path: Path to instructor configuration file (optional)
+            use_canvas_rubric: Whether to download and use the Canvas rubric
+            progress_callback: Optional callback function(progress_percent, description)
+            log_callback: Optional callback function(message)
+            
+        Returns:
+            Dictionary with download results and folder path
+        """
+        print(f"Step 1: Download Only - {assignment_name}")
+        print("=" * 60)
+        
+        # Create organized folder structure
+        date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_assignment_name = re.sub(r'[^\w\s-]', '', assignment_name).strip()
+        safe_assignment_name = re.sub(r'[-\s]+', '_', safe_assignment_name)
+        
+        # Use DOWNLOADED suffix for download-only (different from GRADED)
+        assignment_folder = f"{safe_assignment_name}_{date_str}_DOWNLOADED"
+        base_dir = os.path.join(os.getcwd(), assignment_folder)
+        
+        submissions_dir = os.path.join(base_dir, "submissions")
+        results_dir = os.path.join(base_dir, "results")
+        
+        os.makedirs(submissions_dir, exist_ok=True)
+        os.makedirs(results_dir, exist_ok=True)
+        
+        print(f"Created assignment folder: {assignment_folder}")
+        
+        try:
+            # Step 1a: Handle rubric (Canvas or local)
+            if progress_callback:
+                progress_callback(15, "Loading rubric configuration...")
+            
+            final_rubric_path = None
+            if use_canvas_rubric:
+                print("🔍 Checking for Canvas rubric...")
+                canvas_rubric = self.canvas.get_assignment_rubric(course_id, assignment_id)
+                
+                if canvas_rubric:
+                    # Save Canvas rubric locally
+                    final_rubric_path = os.path.join(base_dir, "canvas_rubric.json")
+                    with open(final_rubric_path, 'w', encoding='utf-8') as f:
+                        json.dump(canvas_rubric, f, indent=2)
+                    print(f"✅ Downloaded Canvas rubric: {canvas_rubric.get('canvas_rubric_title', 'Untitled')}")
+                    print(f"📁 Saved rubric to: {final_rubric_path}")
+                    
+                    # Also save as rubric_used.json for Step 2 grading compatibility
+                    rubric_used_path = os.path.join(base_dir, "rubric_used.json")
+                    with open(rubric_used_path, 'w', encoding='utf-8') as f:
+                        json.dump(canvas_rubric, f, indent=2)
+                else:
+                    print("⚠️  No Canvas rubric found for this assignment")
+                    if not rubric_path:
+                        print("❌ No local rubric provided either")
+                        raise ValueError("No Canvas rubric available and no local rubric provided")
+            
+            if not final_rubric_path:
+                if not rubric_path or (rubric_path and not os.path.exists(rubric_path)):
+                    raise ValueError("Rubric file not found or not provided")
+                final_rubric_path = rubric_path
+                
+                # Copy local rubric as rubric_used.json for Step 2 grading compatibility
+                rubric_used_path = os.path.join(base_dir, "rubric_used.json")
+                shutil.copy2(final_rubric_path, rubric_used_path)
+            
+            # Step 1b: Load instructor configuration (if provided)
+            if progress_callback:
+                progress_callback(20, "Loading instructor configuration...")
+            
+            if instructor_config_path and os.path.exists(instructor_config_path):
+                print(f"🎓 Saving instructor configuration for Step 2...")
+                # Copy config for reference and Step 2 use
+                config_copy = os.path.join(base_dir, "instructor_config_used.json")
+                shutil.copy2(instructor_config_path, config_copy)
+            
+            # Step 1c: Download submissions with anonymization
+            if progress_callback:
+                progress_callback(30, "Downloading submissions from Canvas...")
+            
+            print("📥 Downloading submissions with privacy protection...")
+            downloaded_files = self.canvas.download_submissions_bulk(
+                course_id, assignment_id, submissions_dir, self.anonymizer, progress_callback
+            )
+            
+            if not downloaded_files:
+                return {
+                    'success': False,
+                    'message': 'No submissions found to download',
+                    'folder_path': base_dir
+                }
+            
+            print(f"Downloaded {len(downloaded_files)} submissions")
+            
+            # Step 1d: Save student mapping for Step 2 use
+            if progress_callback:
+                progress_callback(80, "Saving student mapping...")
+            
+            mapping_file = os.path.join(base_dir, "student_mapping.json")
+            self.anonymizer.save_mapping(mapping_file)
+            print(f"Saved student mapping to: {mapping_file}")
+            
+            # Step 1e: Prepare submission data for Step 2
+            if progress_callback:
+                progress_callback(90, "Preparing submission data...")
+            
+            # Create submission data structure for Step 2 grading
+            submission_data = []
+            for user_id, file_paths in downloaded_files.items():
+                # Get anonymized and real names for this user
+                real_name = None
+                anon_name = None
+                for anon_id, data in self.anonymizer.name_map.items():
+                    if data['user_id'] == user_id:
+                        real_name = data['real_name']
+                        anon_name = anon_id
+                        break
+                
+                if not anon_name:
+                    anon_name = self.anonymizer.reverse_map.get(real_name, f"Student_{user_id}")
+                
+                # Find the submission folder for this student
+                student_folder = None
+                for file_path in file_paths:
+                    if file_path and os.path.exists(str(file_path)):
+                        student_folder = Path(str(file_path)).parent
+                        break
+                
+                if student_folder:
+                    submission_data.append({
+                        'name': anon_name,
+                        'real_name': real_name,
+                        'user_id': user_id,
+                        'folder': student_folder,
+                        'files': [str(p) for p in file_paths if p and os.path.exists(str(p))]
+                    })
+            
+            # Save submission data for Step 2
+            submission_data_file = os.path.join(base_dir, "submission_data.json")
+            with open(submission_data_file, 'w', encoding='utf-8') as f:
+                # Convert Path objects to strings for JSON serialization
+                json_data = []
+                for item in submission_data:
+                    json_item = item.copy()
+                    json_item['folder'] = str(json_item['folder'])
+                    json_data.append(json_item)
+                json.dump(json_data, f, indent=2)
+            print(f"Saved submission data to: {submission_data_file}")
+            
+            if progress_callback:
+                progress_callback(100, "Download complete")
+            
+            print("✅ Step 1 (Download Only) completed successfully!")
+            print(f"📁 Downloaded {len(submission_data)} submissions to: {base_dir}")
+            print("📋 Ready for Step 2: Manual review and grading")
+            
+            return {
+                'success': True,
+                'message': f'Downloaded {len(submission_data)} submissions successfully',
+                'folder_path': base_dir,
+                'submission_count': len(submission_data),
+                'submission_data': submission_data,
+                'rubric_path': final_rubric_path
+            }
+            
+        except Exception as e:
+            print(f"❌ Error in Step 1 (Download): {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'success': False,
+                'message': f'Download failed: {str(e)}',
+                'folder_path': base_dir
+            }
+
     def step1_download_and_grade(self, course_id: int, assignment_id: int, 
                                 assignment_name: str, rubric_path: str = None, 
                                 instructor_config_path: str = None, 
@@ -942,12 +1130,117 @@ class TwoStepCanvasGrading:
                         print(f"🔍 Best grade for {anon_name}: {best_grade}")
                         
                         # Normalize the field names for consistency with spreadsheet creation
+                        # Handle different field name variations from AI grading
+                        total_score = (best_grade.get('overall_score', 0) or 
+                                     best_grade.get('total_score', 0) or 
+                                     best_grade.get('total_points', 0))
+                        
+                        # Determine max score - prioritize Canvas rubric info
+                        max_score = 20  # Default for this Canvas rubric
+                        if 'max_possible_score' in best_grade and best_grade['max_possible_score']:
+                            max_score = best_grade['max_possible_score']
+                        elif 'max_score' in best_grade and best_grade['max_score'] and best_grade['max_score'] != 100:
+                            max_score = best_grade['max_score']
+                        
+                        # Calculate percentage if not provided
+                        percentage = best_grade.get('percentage', 0)
+                        if not percentage and total_score and max_score:
+                            percentage = (total_score / max_score) * 100
+                        
+                        # Extract feedback from various possible fields with comprehensive parsing
+                        overall_feedback = ''
+                        
+                        # Try to get the main response string which contains all the feedback
+                        raw_response = best_grade.get('response', '')
+                        
+                        # Method 1: Check for overall_feedback field
+                        if 'overall_feedback' in best_grade and best_grade['overall_feedback']:
+                            overall_feedback = best_grade['overall_feedback']
+                        
+                        # Method 2: Check for comments field (various formats)
+                        elif 'comments' in best_grade:
+                            comments = best_grade['comments']
+                            if isinstance(comments, dict):
+                                # Handle nested comments structure
+                                feedback_parts = []
+                                for key, value in comments.items():
+                                    if isinstance(value, str) and value.strip():
+                                        feedback_parts.append(f"{key}: {value}")
+                                    elif isinstance(value, dict) and 'feedback' in value:
+                                        feedback_parts.append(f"{key}: {value['feedback']}")
+                                overall_feedback = "\n\n".join(feedback_parts)
+                            elif isinstance(comments, str):
+                                overall_feedback = comments
+                        
+                        # Method 3: Check for feedback field
+                        elif 'feedback' in best_grade:
+                            feedback = best_grade['feedback']
+                            if isinstance(feedback, dict):
+                                # Handle nested feedback structure
+                                feedback_parts = []
+                                for key, value in feedback.items():
+                                    if isinstance(value, str) and value.strip():
+                                        feedback_parts.append(f"{key}: {value}")
+                                    elif isinstance(value, dict) and 'feedback' in value:
+                                        feedback_parts.append(f"{key}: {value['feedback']}")
+                                overall_feedback = "\n\n".join(feedback_parts)
+                            elif isinstance(feedback, str):
+                                overall_feedback = feedback
+                        
+                        # Method 4: Parse from raw response if no structured feedback found
+                        elif raw_response:
+                            overall_feedback = raw_response
+                        
+                        # Method 5: Check for detailed_scores with feedback
+                        elif 'detailed_scores' in best_grade:
+                            feedback_parts = []
+                            for score_item in best_grade['detailed_scores']:
+                                if isinstance(score_item, dict) and 'feedback' in score_item and score_item['feedback']:
+                                    criterion = score_item.get('criterion', 'Unknown')
+                                    feedback_parts.append(f"{criterion}: {score_item['feedback']}")
+                            if feedback_parts:
+                                overall_feedback = "\n\n".join(feedback_parts)
+                        
+                        # Method 6: Check criteria_scores for feedback
+                        elif 'criteria_scores' in best_grade:
+                            feedback_parts = []
+                            for criterion_name, criterion_data in best_grade['criteria_scores'].items():
+                                if isinstance(criterion_data, dict) and 'feedback' in criterion_data and criterion_data['feedback']:
+                                    feedback_parts.append(f"{criterion_name}: {criterion_data['feedback']}")
+                            if feedback_parts:
+                                overall_feedback = "\n\n".join(feedback_parts)
+                        
+                        # Clean up the feedback
+                        if overall_feedback:
+                            overall_feedback = overall_feedback.strip()
+                            # Remove any "overall_comments:" prefix if it exists
+                            if overall_feedback.startswith('overall_comments:'):
+                                overall_feedback = overall_feedback[17:].strip()
+                        
+                        print(f"🔍 Extracted feedback for {anon_name}: {overall_feedback[:200]}..." if overall_feedback else f"⚠️ No feedback found for {anon_name}")
+                        if not overall_feedback:
+                            print(f"🔍 Available keys in best_grade: {list(best_grade.keys())}")
+                            if 'comments' in best_grade:
+                                print(f"🔍 Comments structure: {type(best_grade['comments'])} - {best_grade['comments']}")
+                            if 'feedback' in best_grade:
+                                print(f"🔍 Feedback structure: {type(best_grade['feedback'])} - {best_grade['feedback']}")
+                            if 'response' in best_grade:
+                                print(f"🔍 Response structure: {type(best_grade['response'])} - {best_grade['response'][:200]}...")
+                                
+                        # If still no feedback, try one more approach - check for 'Overall:' pattern in any string field
+                        if not overall_feedback:
+                            for key, value in best_grade.items():
+                                if isinstance(value, str) and ('Overall:' in value or 'overall_comments:' in value or len(value) > 50):
+                                    overall_feedback = value
+                                    print(f"🔍 Found feedback in field '{key}': {value[:200]}...")
+                                    break
+                        
                         normalized_grade = {
-                            'total_score': best_grade.get('overall_score', 0),
-                            'max_score': best_grade.get('max_possible_score', 100),
-                            'percentage': best_grade.get('percentage', 0),
+                            'total_score': total_score,
+                            'max_score': max_score,
+                            'percentage': percentage,
                             'letter_grade': best_grade.get('letter_grade', 'F'),
-                            'overall_feedback': best_grade.get('overall_feedback', ''),
+                            'overall_feedback': overall_feedback,
                             'detailed_scores': [],  # We'll populate this from criteria_scores
                             'student_name': best_grade.get('student_name', anon_name),
                             'grading_date': best_grade.get('grading_date', '')

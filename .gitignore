@@ -366,6 +366,7 @@ PASSWORD_DIALOG_FIX.md
 PROJECT_SUMMARY.md
 PYQT6_MODERNIZATION_SUMMARY.md
 SESSION_LOG_AUGUST_4_2025.md
+SESSION_LOG.md
 
 # Generated and downloaded folders
 Final_Project_*_DOWNLOADED/
@@ -377,7 +378,6 @@ Final_Project_*_GRADED/
 sample_papers/
 tests/
 PreviousVersionFiles/
-assets/
 
 # Configuration directories (keep structure but ignore contents)
 config/grading_instructor_config_encouraging.json
