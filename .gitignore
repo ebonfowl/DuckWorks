@@ -293,14 +293,106 @@ experimental/
 # Development Ideas and Design Documents
 grader_ideas/
 
-# Batch files (keep only the main Canvas launcher)
+# Batch files (keep only the essential Canvas launcher)
 start_duckgrade.bat
 start_duckgrade_gui.bat
 start_duckgrade_gui_direct.bat
 start_duckgrade_direct.bat
 start_duckgrade_canvas.bat
+start_duckgrade_canvas_direct.bat
 start_canvas*.bat
 start_local*.bat
 test_canvas_gui.bat
 activate_*.bat
 *.ps1
+
+# =============================================================================
+# NON-ESSENTIAL FILES - All files except DuckWorks GUI core components
+# =============================================================================
+
+# Alternative GUI implementations (keep only duckgrade_canvas_complete.py)
+duckgrade_canvas_pyqt.py
+duckgrade_canvas_simple.py
+duckgrade_canvas_working_base.py
+duckgrade_gui_pyqt.py
+duckgrade_welcome.py
+duckgrader_welcome.py
+canvas_gui.py
+canvas_gui_enhanced.py
+gui.py
+gui_enhanced.py
+
+# Backup and versioned files
+duckgrade_canvas_complete_backup.py
+duckgrade_canvas_complete_backup_before_fix.py
+duckgrade_canvas_complete_fixed.py
+canvas_integration_enhanced.py
+
+# Framework and experimental files
+duckworks_framework.py
+duckworks_pyqt.py
+combo_box_styles.py
+config_template.py
+demo_config.py
+
+# Test and example files
+canvas_example.py
+test_*.py
+!test_canvas_gui.py  # Keep this one if needed for GUI testing
+
+# Debug files
+debug_rubric.py
+debug_rubric_213161.json
+reset_encrypted_storage.py
+
+# Additional config files (keep only core ones)
+grading_instructor_config_encouraging.json
+grading_instructor_config_rigorous.json
+
+# Model management files
+openai_model_manager.py
+
+# Documentation files (keeping essential ones)
+AI_BEHAVIOR_PREFERENCES.md
+ANONYMIZER_INTEGRATION_SUMMARY.md
+BUDGET_IMPROVEMENTS_SUMMARY.md
+BUDGET_STYLING_IMPROVEMENTS.md
+BUDGET_SYSTEM_FIXES.md
+CANVAS_GUI_IMPROVEMENTS.md
+ENHANCED_FEATURES.md
+FEATURES.md
+NEW_SESSION_REVIEW_CHECKLIST.md
+PASSWORD_DIALOG_FIX.md
+PROJECT_SUMMARY.md
+PYQT6_MODERNIZATION_SUMMARY.md
+SESSION_LOG_AUGUST_4_2025.md
+
+# Generated and downloaded folders
+Final_Project_*_DOWNLOADED/
+Final_Project_*_GRADED/
+*_DOWNLOADED/
+*_GRADED/
+
+# Sample data folders
+sample_papers/
+tests/
+PreviousVersionFiles/
+assets/
+
+# Configuration directories (keep structure but ignore contents)
+config/grading_instructor_config_encouraging.json
+config/grading_instructor_config_rigorous.json
+
+# Additional launcher scripts
+start_*.bat
+!start_duckgrade_canvas_direct.bat  # Keep this essential launcher
+
+# Keep only these essential files for DuckWorks GUI:
+# - duckgrade_canvas_complete.py (main GUI)
+# - grading_agent.py (core grading functionality)  
+# - canvas_integration.py (Canvas API integration)
+# - secure_key_manager.py (encrypted API key storage)
+# - config/general_config.json (general settings)
+# - sample_rubric.json or rubrics/sample_rubric.json (default rubric)
+# - grading_instructor_config.json (default instructor config)
+# - LICENSE, README.md, SESSION_LOG.md, LAUNCH_INSTRUCTIONS.md (documentation)
