@@ -7,7 +7,7 @@ A collection of AI-powered tools designed to enhance educational productivity th
 
 ## [DuckGrade](#-duckgrade---ai-powered-assignment-grading)
 
-DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. It leverages AI to automate a large proportion of the grading process to save educators time. It has many advanced features such as direct integration with learning management systems, submission anonymization, fully custimizable grading options, course material uploads, precise cost estimation (don't worry, OpenAI's API is almost free), and GUI-based grading review.
+DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. It leverages AI to automate a large proportion of the grading process and save educators time. It has many advanced features such as direct integration with learning management systems, submission anonymization, fully custimizable grading options, course material uploads, precise cost estimation (don't worry, OpenAI's API is almost free), and GUI-based grading review.
 
 **Coming Soon**: DuckTest, DuckBuild
 
@@ -67,6 +67,10 @@ DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. I
 2. Enter your OpenAI API key
 3. Enter Canvas API token
 4. (Optional) Save your configuration so it can be loaded again later
+
+## [Development Roadmap](#development-roadmap-1)
+
+--- 
 
 # 🦆 DuckGrade - AI-Powered Assignment Grading
 ## Part of the DuckWorks Educational Automation Suite
@@ -296,3 +300,16 @@ Remember that AI grading should supplement, not replace, human judgment in educa
 ---
 
 **Happy Grading! 🎓**
+
+--- 
+
+# Development Roadmap
+
+## Currently in Development
+- DuckTest: Uses AI to intelligently generate exams, quizzes, and queston banks, then automatically pushes the products to your LMS once reviewed for accuracy
+- DuckBuild: Takes a syllabus as input and uses AI to automatically build your course shell within your LMS in accordance with your syllabus and course schedule
+- Windows executable with compiled C++ binaries to elminate the need for any end-user knowledge of python
+
+## Long-Term Development Goals
+- Selectable integration with multiple learning management systems such as Blackboard and Google Classroom; just toggle to your LMS, input the relevant API credentials, and get to work!
+- MacOS executable version
