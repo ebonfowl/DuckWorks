@@ -3,6 +3,8 @@
 
 **Educational Automation That Just Works!** 
 
+## [DuckGrade](#-duckgrade---ai-powered-assignment-grading)
+
 DuckGrade is the first tool in the **DuckWorks Educational Automation Suite** - a collection of AI-powered tools designed to enhance educational productivity through desktop automation.
 
 **Coming Soon**: DuckTest, DuckBuild 
