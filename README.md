@@ -30,8 +30,7 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 - 🌐 **Canvas LMS Integration**: Automatically download submissions and upload grades
 - ⚡ **Complete Automation**: Full workflow from Canvas download to grade upload
 - 📄 **Course Material Uploads**: Upload your course materials to use during grading
-- 📈 **OpenAI pricing transparency**: Create a budget to track AI usage costs with accurate estimation
-- 
+- 📈 **OpenAI pricing transparency**: Create a budget to track AI usage costs with accurate estimation 
 
 ## Installation
 
@@ -91,13 +90,13 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 4. (Optional) Save your configuration so it can be loaded again later
 5. Choose course and assignment from dropdowns
 6. (Optional) Select an instructor personality configuration or create a new one
-7. Select your rubric file or tell the grader to download the ssignment rubric from Canvas
+7. Select your rubric file or tell the grader to download the assignment rubric from Canvas
 8. (Optional) Add any additional grading instructions
 9. Start Step 1: Download submissions
 10. (Optional) Add course materials for grading context
 11. Review the budget and cost estimations
 12. Start Step 2: AI Grading
-13. Review grades and comments in the integrated Review tab
+13. Review grades and comments in the integrated Review tab and make changes where necessary
 14. Save your changes
 15. Start Step 3: Push grades and comments back to Canvas
 
@@ -175,16 +174,16 @@ Check `grading_log.txt` for detailed error messages and processing information.
 ### For Better Grading Results:
 1. **Clear Rubrics**: Write detailed, specific rubric criteria
 2. **Instructor Configuration**: Create an instructor configuration file that closely matches your style, beliefs, and philosophy; then test grade with the configuration to ensure grading validity
-3. **Quality Papers**: Ensure student papers are well-formatted and readable (recommend .docx)
+3. **Quality Papers**: Ensure student papers are well-formatted and readable (recommend .docx for papers/reports and tabular formats for data)
 4. **Consistent Naming**: Use consistent filename conventions for students
 5. **Review Results**: Always review AI-generated grades before finalizing
 6. **Backup Data**: Keep backups of original papers and rubrics
 
 ### Cost Management:
-- Use gpt mini models for (much) lower costs (may impact quality but usually imperceptable)
-- Have students submit .docx (Microsoft Word) files
+- Use gpt mini models for (much) lower costs (may impact quality, but this is usually imperceptable)
+- Have students submit .docx (Microsoft Word) files for papers/reports and tabular formats (.xlsx, .csv) for data
 - Be targeted in course material uploads (e.g., relevant chapters instead of the full textbook)
-- Set reasonable budgets
+- Set a reasonable budget
 
 ## Support and Contribution
 
@@ -200,7 +199,7 @@ This system can be extended with:
 - Integration with learning management systems
 - Custom AI model fine-tuning
 
-## Features Details ✨
+## Feature Details ✨
 
 ### **Canvas Rubric Integration** 📋
 - **Automatic Download**: Fetch grading rubrics directly from Canvas assignments
