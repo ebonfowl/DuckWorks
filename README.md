@@ -1,9 +1,8 @@
-<<<<<<< HEAD
-# 🦆 DUCKWORKS SUITE
+# 🦆 DUCKWORKS SUITE 
 
 **Educational Automation That Just Works!** 
 
-A collection of AI-powered tools designed to enhance educational productivity through desktop automation. All tools are controlled by a single, modern graphical user interface.
+DuckWorks is a collection of AI-powered tools designed to enhance educational productivity through desktop automation. All tools are controlled by a single, modern graphical user interface.
 
 ## [DuckGrade](#-duckgrade---ai-powered-assignment-grading)
 
@@ -27,15 +26,15 @@ DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. I
    - tiktoken
    - PyQt
 
-**Note:** This project uses its own conda environment located in `.conda/` folder. All batch files will refer to that folder to execute the GUI script.
+**Note:** This project uses its own conda environment located in a `.conda/` folder within the working directory. This is a standard conda environment set up, but all batch files will refer to that folder to execute the GUI script so you must have your environment set up in the same way to take advantage of the batch files.
 
-**Coming Soon:** Windows executable with compiled C++ binaries!
+**Coming Soon:** Windows executable with compiled C++ binaries! (No more conda stuff)
 
 ## Quick Start
 
 ### 🌟 Enhanced Versions (RECOMMENDED - New Features!)
 
-#### **Enhanced Canvas LMS Integration**
+#### **Command Line**
 ```powershell
 .conda\python.exe duckgrade_canvas_complete.py
 ```
