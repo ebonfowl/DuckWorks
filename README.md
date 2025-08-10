@@ -5,32 +5,7 @@
 
 DuckGrade is the first tool in the **DuckWorks Educational Automation Suite** - a collection of AI-powered tools designed to enhance educational productivity through desktop automation.
 
-**Coming Soon**: DuckTest, DuckBuild
-
-# 🦆 DuckGrade - AI-Powered Assignment Grading
-## Part of the DuckWorks Educational Automation Suite
-
-DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to automatically grade student assignments based on customizable rubrics and generate comprehensive feedback. Now with **Canvas LMS integration**, **encrypted API key storage**, **AI grader instructor configuration**, **multi-file submission support**, **course material uploads**, **OpenAI pricing transparency**, and **professional GUI with duck branding**!
-
-## 🚀 DUCKGRADE FEATURES
-
-- 🤖 **AI-Powered Grading**: Uses latest OpenAI models for intelligent submission evaluation
-- 🔐 **Secure Key Storage**: Encrypted API key storage with master password protection
-- 🔒 **Privacy Protection**: Student names anonymized for ChatGPT processing
-- 🎛️ **Model Selection**: Choose from current OpenAI models with real-time pricing
-- 📋 **Direct Rubric Download**: Download an existing Canvas rubric instead of making a new one
-- 📋 **Customizable Rubrics**: JSON-based rubric system for flexible grading criteria
-- 🎓 **Instructor Configuration**: Tell the AI to behave exactly as you want it to while grading
-- 📄 **Multiple File Formats**: Supports .txt, .docx, .pdf submissions and many other types
-- 📁 **Multi-File Submissions**: Submissions can contain multiple files (lab report/data, etc.)
-- 📊 **Excel/CSV Output**: Generates backup grading data in tabular format
-- 🎯 **Detailed Feedback**: Provides specific feedback for each rubric criterion
-- 🖥️ **GUI Interface**: User-friendly graphical interface for easy operation
-- 📈 **Summary Reports**: Generates class performance statistics 
-- 🌐 **Canvas LMS Integration**: Automatically download submissions and upload grades
-- ⚡ **Complete Automation**: Full workflow from Canvas download to grade upload
-- 📄 **Course Material Uploads**: Upload your course materials to use during grading
-- 📈 **OpenAI pricing transparency**: Create a budget to track AI usage costs with accurate estimation 
+**Coming Soon**: DuckTest, DuckBuild 
 
 ## Installation
 
@@ -50,7 +25,7 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 
 **Note:** This project uses its own conda environment located in `.conda/` folder. All batch files will refer to that folder to execute the GUI script.
 
-**Coming Soon:** Compiled Windows executable!
+**Coming Soon:** Windows executable with compiled C++ binaries!
 
 ## Quick Start
 
@@ -83,22 +58,50 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 9. **Important**: Copy the token immediately - it will only be shown once
 10. Store the token securely (you'll need it for DuckGrade configuration) 
 
-### 3. Run the System
+### 3. Connect
 1. Launch the GUI: `.conda\python.exe duckgrade_canvas_complete.py` (or double-click `start_duckgrade_canvas_direct.bat`)
 2. Enter your OpenAI API key
 3. Enter Canvas API token
 4. (Optional) Save your configuration so it can be loaded again later
-5. Choose course and assignment from dropdowns
-6. (Optional) Select an instructor personality configuration or create a new one
-7. Select your rubric file or tell the grader to download the assignment rubric from Canvas
-8. (Optional) Add any additional grading instructions
-9. Start Step 1: Download submissions
-10. (Optional) Add course materials for grading context
-11. Review the budget and cost estimations
-12. Start Step 2: AI Grading
-13. Review grades and comments in the integrated Review tab and make changes where necessary
-14. Save your changes
-15. Start Step 3: Push grades and comments back to Canvas
+
+# 🦆 DuckGrade - AI-Powered Assignment Grading
+## Part of the DuckWorks Educational Automation Suite
+
+DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to automatically grade student assignments based on customizable rubrics and generate comprehensive feedback. Now with **Canvas LMS integration**, **encrypted API key storage**, **AI grader instructor configuration**, **multi-file submission support**, **course material uploads**, **OpenAI pricing transparency**, and **professional GUI with duck branding**!
+
+## 🚀 Duckgrade Features
+
+- 🤖 **AI-Powered Grading**: Uses latest OpenAI models for intelligent submission evaluation
+- 🔐 **Secure Key Storage**: Encrypted API key storage with master password protection
+- 🔒 **Privacy Protection**: Student names anonymized for ChatGPT processing
+- 🎛️ **Model Selection**: Choose from current OpenAI models with real-time pricing
+- 📋 **Direct Rubric Download**: Download an existing Canvas rubric instead of making a new one
+- 📋 **Customizable Rubrics**: JSON-based rubric system for flexible grading criteria
+- 🎓 **Instructor Configuration**: Tell the AI to behave exactly as you want it to while grading
+- 📄 **Multiple File Formats**: Supports .txt, .docx, .pdf submissions and many other types
+- 📁 **Multi-File Submissions**: Submissions can contain multiple files (lab report/data, etc.)
+- 📊 **Excel/CSV Output**: Generates backup grading data in tabular format
+- 🎯 **Detailed Feedback**: Provides specific feedback for each rubric criterion
+- 🖥️ **GUI Interface**: User-friendly graphical interface for easy operation
+- 📈 **Summary Reports**: Generates class performance statistics 
+- 🌐 **Canvas LMS Integration**: Automatically download submissions and upload grades
+- ⚡ **Complete Automation**: Full workflow from Canvas download to grade upload
+- 📄 **Course Material Uploads**: Upload your course materials to use during grading
+- 📈 **OpenAI pricing transparency**: Create a budget to track AI usage costs with accurate estimation 
+
+## Instructions
+
+1. Choose course and assignment from dropdowns
+2. (Optional) Select an instructor personality configuration or create a new one
+3. Select your rubric file or tell the grader to download the assignment rubric from Canvas
+4. (Optional) Add any additional grading instructions
+5. Start Step 1: Download submissions
+6. (Optional) Add course materials for grading context
+7. Review the budget and cost estimations
+8. Start Step 2: AI Grading
+9. Review grades and comments in the integrated Review tab and make changes where necessary
+10. Save your changes
+11. Start Step 3: Push grades and comments back to Canvas
 
 ## Rubric Format
 
