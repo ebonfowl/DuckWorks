@@ -116,7 +116,7 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 
 **Note**: DuckGrade can now automatically download rubrics from Canvas. We recommend you build your rubric in Canvas and just tell DuckGrade to download it as this approach is much easier and provides students with important information about grading expectations.
 
-**If you still want to do it the hard way**: Create a JSON file with the following structure:
+**If you still want to do it the hard way**, create a JSON file with the following structure:
 
 ```json
 {
