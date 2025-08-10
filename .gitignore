@@ -227,6 +227,10 @@ debug.log
 *.backup
 *.orig
 
+# Backups folder (do not track any backups or their contents)
+backups/
+backups/*
+
 # Database files
 *.db
 *.sqlite
@@ -349,9 +353,6 @@ reset_encrypted_storage.py
 grading_instructor_config_encouraging.json
 grading_instructor_config_rigorous.json
 
-# Model management files
-openai_model_manager.py
-
 # Documentation files (keeping essential ones)
 AI_BEHAVIOR_PREFERENCES.md
 ANONYMIZER_INTEGRATION_SUMMARY.md
@@ -367,6 +368,7 @@ PROJECT_SUMMARY.md
 PYQT6_MODERNIZATION_SUMMARY.md
 SESSION_LOG_AUGUST_4_2025.md
 SESSION_LOG.md
+STANDARD_OPERATING_PROCEDURES.md
 
 # Generated and downloaded folders
 Final_Project_*_DOWNLOADED/

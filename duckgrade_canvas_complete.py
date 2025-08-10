@@ -173,7 +173,7 @@ class DownloadOnlyWorker(QObject):
         """Run Step 1 (Download Only) process"""
         try:
             # Log start of Step 1
-            self.progress_updated.emit(10, "Initializing download...")
+            self.progress_updated.emit(1, "Initializing download...")
             self.log_message.emit("Starting Step 1: Download Submissions Only")
             self.log_message.emit(f"Course: {self.course_name}")
             self.log_message.emit(f"Assignment: {self.assignment_name}")
@@ -203,7 +203,7 @@ class DownloadOnlyWorker(QObject):
                 raise Exception("Grading agent module not found. Please ensure grading_agent.py is available.")
             
             # Update progress
-            self.progress_updated.emit(30, "Downloading submissions...")
+            self.progress_updated.emit(2, "Preparing to download submissions...")
             
             # Create progress callback that emits signals
             def progress_callback(percent, description):
@@ -266,7 +266,7 @@ class GradingWorker(QObject):
     
     def __init__(self, downloaded_submission_data, download_folder, rubric_path, instructor_config_path,
                  use_canvas_rubric, openai_key, selected_model, assignment_name, course_name, canvas_api,
-                 course_materials_files=None, course_materials_instructions=""):
+                 course_materials_files=None, course_materials_instructions="", additional_grading_instructions=""):
         super().__init__()
         self.downloaded_submission_data = downloaded_submission_data
         self.download_folder = download_folder
@@ -280,6 +280,7 @@ class GradingWorker(QObject):
         self.canvas_api = canvas_api
         self.course_materials_files = course_materials_files or []
         self.course_materials_instructions = course_materials_instructions
+        self.additional_grading_instructions = additional_grading_instructions
         
     def run(self):
         """Run Step 2 (Grading) process"""
@@ -364,6 +365,12 @@ class GradingWorker(QObject):
                 else:
                     self.log_message.emit("📚 No course materials provided")
                 
+                # Log additional grading instructions
+                if self.additional_grading_instructions.strip():
+                    self.log_message.emit(f"📝 Using additional grading instructions: {self.additional_grading_instructions.strip()[:80]}..." if len(self.additional_grading_instructions.strip()) > 80 else f"📝 Using additional grading instructions: {self.additional_grading_instructions.strip()}")
+                else:
+                    self.log_message.emit("📝 No additional grading instructions provided")
+                
                 # Load rubric
                 if self.use_canvas_rubric:
                     # Look for saved Canvas rubric in download folder
@@ -400,34 +407,78 @@ class GradingWorker(QObject):
                 try:
                     progress = 15 + int((i / total_submissions) * 75)  # 15% to 90%
                     student_name = submission_data.get('name', f'Student_{i}')
+                    
+                    # Debug: Log submission data structure
+                    submission_files = submission_data.get('files', [])
+                    file_count = len(submission_files)
+                    self.log_message.emit(f"🔍 Processing {student_name}: {file_count} file(s) detected")
+                    
                     self.progress_updated.emit(progress, f"Grading {student_name}...")
                     self.log_message.emit(f"📝 Grading submission {i+1}/{total_submissions}: {student_name}")
                     
                     # Grade the submission using the grading agent
                     try:
-                        # Prepare submission data for grading agent
-                        submission_file_data = {
-                            'name': student_name,
-                            'content': submission_data.get('content', ''),
-                            'file_path': submission_data.get('file_path', '')
-                        }
+                        # Get submission files (multi-file support)
+                        submission_files = submission_data.get('files', [])
                         
-                        # Call the actual grading method
-                        grading_result = grading_agent.grade_paper(submission_file_data)
+                        # Multi-file vs Single-file submission routing
+                        if len(submission_files) > 1:
+                            # Multi-file submission - prepare structured data for grade_paper
+                            file_names = [os.path.basename(f) for f in submission_files if f]
+                            self.log_message.emit(f"📁 Multi-file submission detected: {len(submission_files)} files for {student_name}")
+                            self.log_message.emit(f"   Files: {', '.join(file_names[:3])}{'...' if len(file_names) > 3 else ''}")
+                            
+                            # Create structured files data for grade_paper multi-file support
+                            files_structured = []
+                            for file_path in submission_files:
+                                if file_path and os.path.exists(file_path):
+                                    filename = os.path.basename(file_path)
+                                    files_structured.append({
+                                        'filename': filename,
+                                        'file_path': file_path,
+                                        'content': submission_data.get('content', '')  # Use extracted content as fallback
+                                    })
+                            
+                            # Use enhanced grade_paper with files array - it handles multi-file internally
+                            submission_file_data = {
+                                'name': student_name,
+                                'content': submission_data.get('content', ''),
+                                'files': files_structured  # This triggers multi-file processing in grade_paper
+                            }
+                            grading_result = grading_agent.grade_paper(submission_file_data, self.additional_grading_instructions.strip())
+                        elif len(submission_files) == 1:
+                            # Single file submission - use existing grade_paper method
+                            submission_file_data = {
+                                'name': student_name,
+                                'content': submission_data.get('content', ''),
+                                'file_path': submission_files[0]
+                            }
+                            file_name = os.path.basename(submission_files[0]) if submission_files[0] else 'Unknown'
+                            self.log_message.emit(f"📄 Single-file submission for {student_name}: {file_name}")
+                            grading_result = grading_agent.grade_paper(submission_file_data, self.additional_grading_instructions.strip())
+                        else:
+                            # No files found - fallback to legacy content-based grading
+                            submission_file_data = {
+                                'name': student_name,
+                                'content': submission_data.get('content', ''),
+                                'file_path': submission_data.get('file_path', '')
+                            }
+                            self.log_message.emit(f"� Text-only submission for {student_name} (no files detected)")
+                            grading_result = grading_agent.grade_paper(submission_file_data, self.additional_grading_instructions.strip())
                         
                         # Create a graded submission entry with actual results
                         graded_submission = {
                             'name': student_name,
                             'id': submission_data.get('id', ''),
                             'status': 'graded',
-                            'score': grading_result.get('total_score', 0),
-                            'feedback': grading_result.get('feedback', ''),
+                            'score': grading_result.get('overall_score', grading_result.get('total_score', 0)),
+                            'feedback': grading_result.get('overall_feedback', grading_result.get('feedback', '')),
                             'detailed_scores': grading_result.get('detailed_scores', {}),
                             'grading_result': grading_result
                         }
                         graded_submissions.append(graded_submission)
                         
-                        self.log_message.emit(f"✓ Completed grading for {student_name} - Score: {grading_result.get('total_score', 'N/A')}")
+                        self.log_message.emit(f"✓ Completed grading for {student_name} - Score: {grading_result.get('overall_score', grading_result.get('total_score', 'N/A'))}")
                         
                     except Exception as grading_error:
                         self.log_message.emit(f"❌ Grading failed for {student_name}: {grading_error}")
@@ -450,6 +501,20 @@ class GradingWorker(QObject):
             
             # Complete grading process
             self.progress_updated.emit(95, "Finalizing results...")
+            
+            # Save graded results to JSON for review tab
+            graded_results_file = grading_folder / "graded_results.json"
+            try:
+                import json
+                with open(graded_results_file, 'w', encoding='utf-8') as f:
+                    json.dump(graded_submissions, f, indent=2, ensure_ascii=False)
+                self.log_message.emit(f"💾 Graded results saved to: {graded_results_file.name}")
+            except Exception as save_error:
+                self.log_message.emit(f"⚠️ Warning: Could not save graded results: {save_error}")
+            
+            # Store graded results in memory for review tab
+            self.graded_results = graded_submissions
+            self.log_message.emit(f"📝 Graded results stored in memory for review")
             
             # Create summary report
             summary_file = grading_folder / "grading_summary.txt"
@@ -479,31 +544,103 @@ class GradingWorker(QObject):
             self.log_message.emit(f"🔒 Student identities remain anonymized in file system")
             
             # Create Excel review spreadsheet
+            print("DEBUG: *** ENTERING SPREADSHEET CREATION SECTION ***")
+            print(f"DEBUG: About to try importing pandas...")
             excel_path = None
             try:
+                print("DEBUG: Inside try block for Excel creation")
                 import pandas as pd
+                print("DEBUG: pandas imported successfully")
                 
                 # Filter successful submissions for Excel export
                 successful_submissions = [sub for sub in graded_submissions if sub.get('status') == 'graded']
                 
+                print(f"DEBUG: Total graded_submissions: {len(graded_submissions)}")
+                print(f"DEBUG: Successful submissions (status='graded'): {len(successful_submissions)}")
+                if graded_submissions:
+                    print(f"DEBUG: Sample submission status: {graded_submissions[0].get('status', 'NO_STATUS')}")
+                    print(f"DEBUG: Sample submission keys: {list(graded_submissions[0].keys())}")
+                    print(f"DEBUG: Sample submission score (old): {graded_submissions[0].get('score', 'NO_SCORE')}")
+                    print(f"DEBUG: Sample submission score (new): {graded_submissions[0].get('grading_result', {}).get('overall_score', 'NO_OVERALL_SCORE')}")
+                    print(f"DEBUG: Sample submission feedback (old): {graded_submissions[0].get('feedback', 'NO_FEEDBACK')[:50]}...")
+                    print(f"DEBUG: Sample submission feedback (new): {graded_submissions[0].get('grading_result', {}).get('overall_feedback', 'NO_OVERALL_FEEDBACK')[:50]}...")
+                    print(f"DEBUG: Sample submission name: {graded_submissions[0].get('name', 'NO_NAME')}")
+                
                 if successful_submissions:
-                    # Prepare data for Excel
+                    # Load student mapping for real names and user IDs
+                    student_mapping = {}
+                    try:
+                        import json
+                        print(f"DEBUG: Looking for student mapping in grading_folder: {grading_folder}")
+                        # The mapping files are in the parent folder of results, not in results itself
+                        root_folder = grading_folder.parent
+                        print(f"DEBUG: Looking in root folder instead: {root_folder}")
+                        mapping_file = root_folder / "student_mapping.json"
+                        print(f"DEBUG: Full mapping file path: {mapping_file}")
+                        print(f"DEBUG: Mapping file exists: {mapping_file.exists()}")
+                        if mapping_file.exists():
+                            with open(mapping_file, 'r', encoding='utf-8') as f:
+                                mapping_data = json.load(f)
+                            name_map = mapping_data.get('name_map', mapping_data) if isinstance(mapping_data, dict) else mapping_data
+                            for anon_name, data in name_map.items():
+                                if isinstance(data, dict) and 'real_name' in data:
+                                    student_mapping[anon_name] = {
+                                        'real_name': data['real_name'],
+                                        'user_id': data.get('user_id', '')
+                                    }
+                        else:
+                            print("DEBUG: student_mapping.json not found, trying fallback")
+                            # Fallback: try loading from submission_data.json in root folder
+                            submission_data_file = root_folder / "submission_data.json"
+                            print(f"DEBUG: Fallback file path: {submission_data_file}")
+                            print(f"DEBUG: Fallback file exists: {submission_data_file.exists()}")
+                            if submission_data_file.exists():
+                                with open(submission_data_file, 'r', encoding='utf-8') as f:
+                                    submission_data = json.load(f)
+                                for sub in submission_data:
+                                    anon_name = sub.get('name', '')
+                                    student_mapping[anon_name] = {
+                                        'real_name': sub.get('real_name', anon_name),
+                                        'user_id': sub.get('user_id', '')
+                                    }
+                        print(f"DEBUG: Loaded student mapping with {len(student_mapping)} entries for spreadsheet")
+                    except Exception as mapping_error:
+                        print(f"DEBUG: Could not load student mapping: {mapping_error}")
+                        student_mapping = {}
+                    
+                    # Prepare data for Excel using proper format to match working example
                     excel_data = []
                     for sub in successful_submissions:
+                        # Get anonymized name from the submission
+                        anon_name = sub.get('name', '')
+                        
+                        # Look up real name and user ID from mapping
+                        mapping_info = student_mapping.get(anon_name, {})
+                        real_name = mapping_info.get('real_name', anon_name)
+                        user_id = mapping_info.get('user_id', '')
+                        
+                        # Extract grading data properly
+                        score = sub.get('score', sub.get('grading_result', {}).get('overall_score', 0))
+                        max_score = sub.get('max_score', 
+                                           sub.get('grading_result', {}).get('max_possible_score', 
+                                           sub.get('grading_result', {}).get('max_score', 100)))  # Look in grading_result for max_possible_score first
+                        percentage = (score / max_score * 100) if max_score > 0 else 0
+                        
+                        # Format AI_Comments with rubric criteria breakdown
+                        ai_comments = self.format_rubric_comments(sub.get('grading_result', {}))
+                        
                         row = {
-                            'Student Name': sub.get('name', ''),
-                            'Student ID': sub.get('id', ''),
-                            'Total Score': sub.get('score', 0),
-                            'Feedback': sub.get('feedback', ''),
-                            'Status': sub.get('status', '')
+                            'Student_Name': real_name,  # Use real name from mapping
+                            'Canvas_User_ID': user_id,  # Canvas user ID from mapping
+                            'AI_Score': score,
+                            'Max_Score': max_score,
+                            'AI_Percentage': f"{percentage:.1f}%",
+                            'Final_Grade': f"{percentage:.1f}%",  # Editable in review
+                            'AI_Comments': ai_comments,
+                            'Final_Comments': ai_comments,  # Copy formatted comments for editing
+                            'Notes': '',  # For manual notes
+                            'Upload_Status': 'PENDING'  # Status for Canvas upload
                         }
-                        
-                        # Add detailed scores if available
-                        detailed_scores = sub.get('detailed_scores', {})
-                        if detailed_scores:
-                            for criterion, score in detailed_scores.items():
-                                row[f'{criterion}_Score'] = score
-                        
                         excel_data.append(row)
                     
                     # Create DataFrame and save to Excel
@@ -518,9 +655,14 @@ class GradingWorker(QObject):
                 else:
                     self.log_message.emit("⚠️ No successful submissions to export to spreadsheet")
                     
-            except ImportError:
+            except ImportError as import_error:
+                print(f"DEBUG: ImportError in Excel creation: {import_error}")
                 self.log_message.emit("⚠️ pandas or openpyxl not available for Excel export")
             except Exception as excel_error:
+                print(f"DEBUG: Exception in Excel creation: {excel_error}")
+                print(f"DEBUG: Exception type: {type(excel_error)}")
+                import traceback
+                print(f"DEBUG: Traceback: {traceback.format_exc()}")
                 self.log_message.emit(f"⚠️ Could not create Excel file: {excel_error}")
             
             # Prepare results
@@ -542,6 +684,40 @@ class GradingWorker(QObject):
             import traceback
             traceback.print_exc()
             self.error_occurred.emit(error_msg)
+    
+    def format_rubric_comments(self, grading_result):
+        """Format rubric comments in the same style as the working example"""
+        if not grading_result or 'criteria_scores' not in grading_result:
+            # Fallback to overall feedback if no criteria scores
+            return grading_result.get('overall_feedback', '')
+        
+        criteria_scores = grading_result.get('criteria_scores', {})
+        formatted_comments = []
+        
+        for criterion_name, criterion_data in criteria_scores.items():
+            score = criterion_data.get('score', 0)
+            max_score = criterion_data.get('max_score', 0)  
+            feedback = criterion_data.get('feedback', '')
+            
+            # Format: "Criterion: score/max_score\n  - feedback"
+            criterion_line = f"{criterion_name}: {score}/{max_score}"
+            if feedback.strip():
+                # Add indented feedback
+                feedback_lines = feedback.strip().split('\n')
+                feedback_formatted = '\n'.join([f"  - {line}" if i == 0 else f"    {line}" for i, line in enumerate(feedback_lines)])
+                criterion_line += f"\n{feedback_formatted}"
+            
+            formatted_comments.append(criterion_line)
+        
+        # Join all criteria with double newlines
+        result = '\n\n'.join(formatted_comments)
+        
+        # Add overall feedback at the end if present
+        overall_feedback = grading_result.get('overall_feedback', '')
+        if overall_feedback and overall_feedback.strip():
+            result += f"\n\nOverall: {overall_feedback.strip()}"
+        
+        return result
 
 class Step1Worker(QObject):
     """Worker class for running Step 1 in background thread with proper signals"""
@@ -1294,12 +1470,38 @@ class DuckGradeCanvasGUI(QMainWindow):
         new_instructor_btn.setToolTip("Create a new instructor configuration with guided setup")
         new_instructor_btn.clicked.connect(self.create_new_instructor_config)
         instructor_layout.addWidget(new_instructor_btn)
-        
+
         config_layout.addLayout(instructor_layout)
         
-        layout.addWidget(config_group)
+        # Additional Grading Instructions
+        grading_instructions_layout = QVBoxLayout()
+        grading_instructions_layout.addWidget(QLabel("📝 Additional Grading Instructions (Optional):"))
         
-        # Step 1: Download Submissions Group (moved here for better workflow order)
+        self.additional_grading_instructions = QTextEdit()
+        self.additional_grading_instructions.setMaximumHeight(90)
+        self.additional_grading_instructions.setPlaceholderText(
+            "Enter assignment-specific instructions for the AI grader\n\n"
+            "Multi-file example: Grade the research paper and verify calculations match the Excel data"
+        )
+        self.additional_grading_instructions.setStyleSheet("""
+            QTextEdit {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 8px;
+                background-color: white;
+                font-size: 10pt;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QTextEdit:focus {
+                border-color: #80bdff;
+                outline: 0;
+            }
+        """)
+        
+        grading_instructions_layout.addWidget(self.additional_grading_instructions)
+        config_layout.addLayout(grading_instructions_layout)
+
+        layout.addWidget(config_group)        # Step 1: Download Submissions Group (moved here for better workflow order)
         step1_group = QGroupBox("📥 Step 1: Download Submissions and Calculate Costs")
         step1_layout = QVBoxLayout(step1_group)
         
@@ -1368,7 +1570,7 @@ class DuckGradeCanvasGUI(QMainWindow):
         # Create the course materials file list directly here
         self.course_files_list = QTreeWidget()
         self.course_files_list.setHeaderLabels(["📄 File", "🔢 Tokens", "💰 Cost", "📊 Budget Impact"])
-        self.course_files_list.setMaximumHeight(100)
+        self.course_files_list.setMaximumHeight(125)  # Average of 100 and 150
         self.course_files_list.setRootIsDecorated(False)  # No expand/collapse icons
         self.course_files_list.setAlternatingRowColors(True)
         
@@ -1412,7 +1614,7 @@ class DuckGradeCanvasGUI(QMainWindow):
         
         self.downloaded_submissions_list = QTreeWidget()
         self.downloaded_submissions_list.setHeaderLabels(["👨‍🎓 Student", "📄 Files", "🔢 Tokens", "💰 Cost", "📊 Budget Impact"])
-        self.downloaded_submissions_list.setMaximumHeight(150)
+        self.downloaded_submissions_list.setMaximumHeight(125)  # Average of 100 and 150  
         self.downloaded_submissions_list.setRootIsDecorated(False)
         self.downloaded_submissions_list.setAlternatingRowColors(True)
         
@@ -4100,9 +4302,9 @@ class DuckGradeCanvasGUI(QMainWindow):
                     QMessageBox.warning(self, "Warning", "Could not retrieve OpenAI API key.")
                     return
                 
-                # Create model manager and fetch models
+                # Create model manager and fetch models (force refresh to get latest)
                 model_manager = OpenAIModelManager(api_key)
-                all_models = model_manager.get_available_models()
+                all_models = model_manager.get_available_models(force_refresh=True)
                 
                 # Filter out models that don't support file uploads
                 compatible_models = []
@@ -4124,11 +4326,13 @@ class DuckGradeCanvasGUI(QMainWindow):
                     # Store the complete model data (including pricing) instead of just model_id
                     self.model_combo.addItem(display_text, model)
                     
-                    # Set a reasonable default
-                    if model_id in ['gpt-4o-mini', 'gpt-4o', 'gpt-4']:
-                        current_model = display_text
+                    # Prioritize gpt-4o-mini as default, then fallback to others
+                    if model_id == 'gpt-4o-mini':
+                        current_model = display_text  # Always prefer gpt-4o-mini
+                    elif current_model is None and model_id in ['gpt-4o', 'gpt-4']:
+                        current_model = display_text  # Only use as fallback if gpt-4o-mini not found
                 
-                # Set default selection
+                # Set default selection - prioritize gpt-4o-mini
                 if current_model:
                     index = self.model_combo.findText(current_model)
                     if index >= 0:
@@ -4875,7 +5079,8 @@ class DuckGradeCanvasGUI(QMainWindow):
             course_name,
             self.canvas_api,
             course_materials_files,
-            course_materials_instructions
+            course_materials_instructions,
+            self.additional_grading_instructions.toPlainText().strip()
         )
         
         self.step2_thread = threading.Thread(target=self.step2_worker.run, daemon=True)
@@ -5470,17 +5675,60 @@ class DuckGradeCanvasGUI(QMainWindow):
             self.review_tab = None
     
     def load_review_data(self):
-        """Load data from the review spreadsheet"""
+        """Load data from the review spreadsheet (primary) or graded results (fallback)"""
         try:
             import pandas as pd
             import os
             import json
             
-            if not os.path.exists(self.review_spreadsheet_path):
-                QMessageBox.warning(self, "File Not Found", 
-                                  f"Review spreadsheet not found: {self.review_spreadsheet_path}")
+            # Primary: Try to load from Excel spreadsheet first
+            if hasattr(self, 'review_spreadsheet_path') and os.path.exists(self.review_spreadsheet_path):
+                print("DEBUG: Using Excel spreadsheet as primary data source")
+                self.load_review_data_from_spreadsheet()
                 return
             
+            # Fallback 1: Load from saved graded results if available in memory
+            if hasattr(self, 'graded_results') and self.graded_results:
+                print("DEBUG: Fallback to graded results from memory")
+                graded_submissions = self.graded_results
+                self.load_review_data_from_graded_results(graded_submissions)
+                return
+            
+            # Fallback 2: Try to load from saved graded results JSON
+            graded_results_path = None
+            if hasattr(self, 'submission_folder_path') and self.submission_folder_path:
+                results_folder = Path(self.submission_folder_path)
+                graded_results_path = results_folder / "graded_results.json"
+                print(f"DEBUG: Looking for graded results at: {graded_results_path}")
+                
+                if graded_results_path and graded_results_path.exists():
+                    print("DEBUG: Fallback to graded results from JSON file")
+                    with open(graded_results_path, 'r', encoding='utf-8') as f:
+                        graded_submissions = json.load(f)
+                    self.load_review_data_from_graded_results(graded_submissions)
+                    return
+            
+            # No data source available
+            QMessageBox.warning(self, "File Not Found", 
+                              f"No review data found.\n"
+                              f"Expected spreadsheet: {getattr(self, 'review_spreadsheet_path', 'Not set')}\n"
+                              f"Or graded results JSON: {graded_results_path or 'Not available'}")
+            return
+
+        except Exception as e:
+            print(f"DEBUG: Error loading review data: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(self, "Error", f"Failed to load review data: {str(e)}")
+
+    def load_review_data_from_spreadsheet(self):
+        """Load review data from Excel spreadsheet (primary data source)"""
+        try:
+            import pandas as pd
+            import os
+            import json
+            
+            print("DEBUG: Loading data from Excel spreadsheet")
             # Read the spreadsheet
             df = pd.read_excel(self.review_spreadsheet_path)
             
@@ -5489,16 +5737,18 @@ class DuckGradeCanvasGUI(QMainWindow):
             print(f"DEBUG: First few rows:")
             print(df.head())
             
-            # Load student mapping to convert real names back to anonymized folder names
+            # Load student name mapping (real_name -> anon_name) for file access
             student_name_to_anon_mapping = {}
             mapping_file = Path(self.submission_folder_path).parent / "student_mapping.json"
             if mapping_file.exists():
                 try:
                     with open(mapping_file, 'r', encoding='utf-8') as f:
-                        name_map = json.load(f)
+                        mapping_data = json.load(f)
+                    # Handle both old and new mapping file formats
+                    name_map = mapping_data.get('name_map', mapping_data) if isinstance(mapping_data, dict) else mapping_data
                     # Create reverse mapping: real_name -> anon_name
                     for anon_name, data in name_map.items():
-                        if 'real_name' in data:
+                        if isinstance(data, dict) and 'real_name' in data:
                             real_name = data['real_name']
                             student_name_to_anon_mapping[real_name] = anon_name
                     print(f"DEBUG: Loaded student name mapping with {len(student_name_to_anon_mapping)} entries")
@@ -5572,10 +5822,108 @@ class DuckGradeCanvasGUI(QMainWindow):
             print(f"DEBUG: Successfully loaded review data for {len(self.review_data)} students")
             
         except Exception as e:
-            print(f"DEBUG: Error loading review data: {e}")
+            print(f"DEBUG: Error loading review data from spreadsheet: {e}")
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(self, "Error", f"Failed to load review data: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to load review data from spreadsheet: {str(e)}")
+
+    def load_review_data_from_graded_results(self, graded_submissions):
+        """Load review data directly from graded submissions data"""
+        try:
+            import json
+            from pathlib import Path
+            
+            print("DEBUG: Loading review data from graded submissions")
+            
+            # Load student mapping to get real names
+            student_mapping = {}
+            if hasattr(self, 'submission_folder_path') and self.submission_folder_path:
+                # Look for mapping files in parent folder
+                root_folder = Path(self.submission_folder_path).parent
+                mapping_file = root_folder / "student_mapping.json"
+                submission_data_file = root_folder / "submission_data.json"
+                
+                if mapping_file.exists():
+                    with open(mapping_file, 'r', encoding='utf-8') as f:
+                        mapping_data = json.load(f)
+                    name_map = mapping_data.get('name_map', mapping_data) if isinstance(mapping_data, dict) else mapping_data
+                    for anon_name, data in name_map.items():
+                        if isinstance(data, dict) and 'real_name' in data:
+                            student_mapping[anon_name] = {
+                                'real_name': data['real_name'],
+                                'user_id': data.get('user_id', '')
+                            }
+                elif submission_data_file.exists():
+                    # Fallback to submission data
+                    with open(submission_data_file, 'r', encoding='utf-8') as f:
+                        submission_data = json.load(f)
+                    for sub in submission_data:
+                        anon_name = sub.get('name', '')
+                        student_mapping[anon_name] = {
+                            'real_name': sub.get('real_name', anon_name),
+                            'user_id': sub.get('user_id', '')
+                        }
+                
+                print(f"DEBUG: Loaded student mapping with {len(student_mapping)} entries")
+            
+            # Store the data for review
+            self.review_data = {}
+            self.review_original_data = {}
+            
+            # Get assignment info
+            assignment_name = getattr(self, 'current_assignment_name', getattr(self, 'assignment_name', 'Unknown Assignment'))
+            course_name = getattr(self, 'current_course_name', getattr(self, 'course_name', 'Unknown Course'))
+            
+            successful_submissions = [sub for sub in graded_submissions if sub.get('status') == 'graded']
+            print(f"DEBUG: Found {len(successful_submissions)} successfully graded submissions")
+            
+            for sub in successful_submissions:
+                anon_name = sub.get('name', '')
+                mapping_info = student_mapping.get(anon_name, {})
+                real_name = mapping_info.get('real_name', anon_name)
+                user_id = mapping_info.get('user_id', sub.get('id', ''))
+                
+                score = sub.get('score', sub.get('grading_result', {}).get('overall_score', 0))
+                comments = sub.get('feedback', sub.get('grading_result', {}).get('overall_feedback', ''))
+                
+                # Find submission files using the refactored method
+                submission_files = self.find_submission_files(anon_name, user_id)
+                
+                print(f"DEBUG: Processing {real_name} (anon: {anon_name}): score={score}, files={len(submission_files) if submission_files else 0}")
+                
+                # Store review data using REAL name as key
+                self.review_data[real_name] = {
+                    'student_id': user_id,
+                    'real_name': real_name,
+                    'anon_name': anon_name,
+                    'score': score,
+                    'comments': comments,
+                    'submission_files': submission_files,
+                    'changed': False
+                }
+                
+                # Store original data for comparison
+                self.review_original_data[real_name] = {
+                    'score': score,
+                    'comments': comments
+                }
+            
+            # Set assignment info
+            self.review_assignment_info.setText(
+                f"Assignment: {assignment_name} | Course: {course_name} | "
+                f"Total Submissions: {len(self.review_data)}"
+            )
+            
+            # Populate the student list in the UI
+            self.populate_review_student_list()
+            
+            print(f"DEBUG: Successfully loaded review data from graded results for {len(self.review_data)} students")
+            
+        except Exception as e:
+            print(f"DEBUG: Error loading review data from graded results: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(self, "Error", f"Failed to load review data from graded results: {str(e)}")
 
     def populate_review_student_list(self):
         """Populate the student list in the review tab"""
@@ -5659,50 +6007,43 @@ class DuckGradeCanvasGUI(QMainWindow):
             traceback.print_exc()
     
     def find_submission_files(self, student_name, student_id):
-        """Find submission files for a student"""
+        """Find submission files for a student using stored submission data"""
         try:
+            import json
             from pathlib import Path
-            # Search for student folder by name (could be anonymized)
-            submission_files = []
-            submission_path = Path(self.submission_folder_path)
-            if not submission_path.exists():
-                print(f"DEBUG: Submission folder does not exist: {submission_path}")
-                return []
-            # Try to find student folder by exact name match first
-            student_folder = submission_path / student_name
-            if student_folder.exists() and student_folder.is_dir():
-                print(f"DEBUG: Found exact folder match: {student_folder}")
-                # Get all files in the student folder
-                for file_path in student_folder.rglob('*'):
-                    if file_path.is_file() and not file_path.name.startswith('.'):
-                        submission_files.append(str(file_path))
-            else:
-                # Search for folders that might contain the student name or ID
-                print(f"DEBUG: No exact folder match for '{student_name}', searching for partial matches...")
-                for folder in submission_path.iterdir():
-                    if folder.is_dir():
-                        folder_name = folder.name.lower()
-                        search_terms = [
-                            student_name.lower(),
-                            student_name.lower().replace(' ', '_'),
-                            student_name.lower().replace(' ', '-'),
-                            str(student_id).lower()
-                        ]
-                        
-                        # Check if any search term is in the folder name
-                        for term in search_terms:
-                            if term in folder_name:
-                                print(f"DEBUG: Found partial match: {folder} for search term '{term}'")
-                                # Get all files in the matched folder
-                                for file_path in folder.rglob('*'):
-                                    if file_path.is_file() and not file_path.name.startswith('.'):
-                                        submission_files.append(str(file_path))
-                                break
             
-            print(f"DEBUG: Found {len(submission_files)} files for student '{student_name}' (ID: {student_id})")        
-            return submission_files
+            # Load submission data from the download process
+            if not hasattr(self, '_submission_data_cache'):
+                self._submission_data_cache = {}
+                # Try to load from submission_data.json in the root folder
+                root_folder = Path(self.submission_folder_path).parent if Path(self.submission_folder_path).name == 'results' else Path(self.submission_folder_path).parent
+                submission_data_file = root_folder / "submission_data.json"
+                print(f"DEBUG: find_submission_files - Loading submission data from: {submission_data_file}")
+                
+                if submission_data_file.exists():
+                    with open(submission_data_file, 'r', encoding='utf-8') as f:
+                        submission_data = json.load(f)
+                    
+                    # Index by anonymized name for fast lookup
+                    for sub in submission_data:
+                        anon_name = sub.get('name', '')
+                        self._submission_data_cache[anon_name] = sub
+                    print(f"DEBUG: find_submission_files - Loaded submission data for {len(self._submission_data_cache)} students")
+                else:
+                    print(f"DEBUG: find_submission_files - submission_data.json not found at: {submission_data_file}")
+            
+            # Look up the student data directly
+            student_data = self._submission_data_cache.get(student_name, {})
+            if student_data:
+                files = student_data.get('files', [])
+                print(f"DEBUG: find_submission_files - Found {len(files)} files for {student_name} from submission data")
+                return files
+            else:
+                print(f"DEBUG: find_submission_files - No submission data found for {student_name}")
+                return []
+                
         except Exception as e:
-            print(f"DEBUG: Error: {e}")
+            print(f"DEBUG: find_submission_files - Error loading submission data: {e}")
             return []
 
 
@@ -6649,54 +6990,54 @@ class DuckGradeCanvasGUI(QMainWindow):
             QMessageBox.warning(self, "Warning", "Student data not found.")
             return
         
-        # Use the same logic as find_submission_files to locate the actual folder
-        from pathlib import Path
-        submission_path = Path(self.submission_folder_path)
-        
-        if not submission_path.exists():
-            QMessageBox.warning(self, "Warning", f"Submission folder does not exist: {submission_path}")
-            return
-        
-        # Get both real and anonymized names for searching
-        real_student_name = student_data.get('real_name', student_name_key)
+        # Use the same submission data lookup as find_submission_files method
         anon_student_name = student_data.get('anon_name', student_name_key)
+        real_student_name = student_data.get('real_name', student_name_key)
         
         print(f"DEBUG: Looking for directory for student: {real_student_name} (anon: {anon_student_name}, ID: {student_id})")
         
-        # Try to find student folder by exact name match first (try both real and anon names)
-        student_folder = None
-        for name_to_try in [anon_student_name, real_student_name]:
-            test_folder = submission_path / name_to_try
-            if test_folder.exists() and test_folder.is_dir():
-                student_folder = test_folder
-                print(f"DEBUG: Found exact folder match: {student_folder}")
-                break
+        # Use find_submission_files to get actual file paths stored during download
+        submission_files = self.find_submission_files(anon_student_name, student_id)
         
-        # If no exact match, search for folders that might contain the student name or ID
-        if not student_folder:
-            print(f"DEBUG: No exact folder match, searching for partial matches...")
-            search_terms = [
-                real_student_name.lower(),
-                real_student_name.lower().replace(' ', '_'),
-                real_student_name.lower().replace(' ', '-'),
-                anon_student_name.lower(),
-                anon_student_name.lower().replace(' ', '_'),
-                anon_student_name.lower().replace(' ', '-'),
-                str(student_id).lower()
-            ]
+        student_folder = None
+        if submission_files:
+            # Get the directory from the first file path
+            from pathlib import Path
+            first_file_path = Path(submission_files[0])
+            student_folder = first_file_path.parent
+            print(f"DEBUG: Found student folder from submission files: {student_folder}")
+        else:
+            print(f"DEBUG: No submission files found for {anon_student_name}")
             
-            for folder in submission_path.iterdir():
-                if folder.is_dir():
-                    folder_name = folder.name.lower()
-                    
-                    # Check if any search term is in the folder name
-                    for term in search_terms:
-                        if term in folder_name:
-                            student_folder = folder
-                            print(f"DEBUG: Found partial match: {student_folder} for search term '{term}'")
-                            break
-                    if student_folder:
+            # Fallback: try to find by direct folder search as before
+            from pathlib import Path
+            submission_path = Path(self.submission_folder_path)
+            
+            if submission_path.exists():
+                # Try exact name matches first
+                for name_to_try in [anon_student_name, real_student_name]:
+                    test_folder = submission_path / name_to_try
+                    if test_folder.exists() and test_folder.is_dir():
+                        student_folder = test_folder
+                        print(f"DEBUG: Found exact folder match: {student_folder}")
                         break
+                
+                # If no exact match, try pattern matching
+                if not student_folder:
+                    print(f"DEBUG: No exact folder match, searching for partial matches...")
+                    search_terms = [
+                        real_student_name.lower(),
+                        anon_student_name.lower(),
+                        str(student_id).lower()
+                    ]
+                    
+                    for folder in submission_path.iterdir():
+                        if folder.is_dir():
+                            folder_name = folder.name.lower()
+                            if any(term in folder_name for term in search_terms):
+                                student_folder = folder
+                                print(f"DEBUG: Found partial match: {student_folder}")
+                                break
         
         # Open the directory if found
         if student_folder and student_folder.exists():
@@ -6744,8 +7085,16 @@ class DuckGradeCanvasGUI(QMainWindow):
         else:
             QMessageBox.warning(self, "Warning", f"Submission directory not found for student: {real_student_name}")
             print(f"DEBUG: Could not find directory for student: {real_student_name} (anon: {anon_student_name}, ID: {student_id})")
-            print(f"DEBUG: Searched in: {submission_path}")
-            print(f"DEBUG: Available folders: {[f.name for f in submission_path.iterdir() if f.is_dir()]}")
+            
+            # Show more debugging info for troubleshooting
+            from pathlib import Path
+            submission_path = Path(self.submission_folder_path)
+            if submission_path.exists():
+                available_folders = [f.name for f in submission_path.iterdir() if f.is_dir()]
+                print(f"DEBUG: Searched in: {submission_path}")
+                print(f"DEBUG: Available folders: {available_folders}")
+            else:
+                print(f"DEBUG: Submission path does not exist: {submission_path}")
     
     def mark_current_as_changed(self):
         """Mark the current submission as having unsaved changes"""

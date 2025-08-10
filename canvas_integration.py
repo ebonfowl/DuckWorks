@@ -433,12 +433,20 @@ class CanvasAPI:
         downloaded_files = {}
         total_submissions = len(submissions)
         
+        # Pre-scan submissions to calculate total file count for weighted progress
+        total_files = 0
+        for submission in submissions:
+            if submission.get('attachments'):
+                total_files += len(submission['attachments'])
+            if submission.get('body'):
+                total_files += 1  # Count text submissions as 1 file
+        
+        print(f"📊 Total files to download: {total_files} across {total_submissions} submissions")
+        
+        # Track progress across all files (not just submissions)
+        files_processed = 0
+        
         for i, submission in enumerate(submissions):
-            # Update progress for download phase
-            if progress_callback and total_submissions > 0:
-                download_progress = 30 + (15 * i / total_submissions)  # 30-45% range for downloads
-                progress_callback(int(download_progress), f"Downloading submission {i+1}/{total_submissions}...")
-            
             print(f"🔍 Processing submission {i+1}/{len(submissions)}: {submission.get('id', 'no-id')}")
             
             user_id = submission['user_id']
@@ -478,16 +486,26 @@ class CanvasAPI:
             os.makedirs(user_dir, exist_ok=True)
             print(f"  - Created directory: {user_dir}")
             
+            # Student-level progress update (20-90% range for downloads)
+            if progress_callback and total_submissions > 0:
+                student_progress = 20 + (70 * i / total_submissions)
+                progress_callback(int(student_progress), f"Processing {anon_name} ({i+1}/{total_submissions})...")
+            
             # Download file attachments
             if submission.get('attachments'):
-                for attachment in submission['attachments']:
+                for j, attachment in enumerate(submission['attachments']):
                     original_filename = attachment['filename']
-                    # Keep original extension but anonymize filename
-                    file_ext = os.path.splitext(original_filename)[1]
+                    # Keep original extension but anonymize filename and normalize extension case
+                    file_ext = os.path.splitext(original_filename)[1].lower()  # Ensure lowercase for OpenAI compatibility
                     anon_filename = f"{anon_name}_submission{file_ext}"
                     
                     file_url = attachment['url']
                     file_path = os.path.join(user_dir, anon_filename)
+                    
+                    # File-level progress update
+                    if progress_callback and total_files > 0:
+                        file_progress = 20 + (70 * files_processed / total_files)
+                        progress_callback(int(file_progress), f"Downloading {original_filename} for {anon_name}...")
                     
                     try:
                         print(f"    - Downloading: {original_filename} -> {anon_filename}")
@@ -496,10 +514,18 @@ class CanvasAPI:
                         print(f"    - ✅ Downloaded: {anon_filename} for {anon_name}")
                     except Exception as e:
                         print(f"    - ❌ Error downloading {original_filename} for {anon_name}: {e}")
+                    
+                    files_processed += 1
             
             # Save text submissions
             if submission.get('body'):
                 text_file = os.path.join(user_dir, f"{anon_name}_text_submission.html")
+                
+                # File-level progress update for text submission
+                if progress_callback and total_files > 0:
+                    file_progress = 20 + (70 * files_processed / total_files)
+                    progress_callback(int(file_progress), f"Saving text submission for {anon_name}...")
+                
                 # Anonymize any names that might appear in the submission text
                 anonymized_body = anonymizer.anonymize_text(submission['body'])
                 
@@ -507,6 +533,8 @@ class CanvasAPI:
                     f.write(anonymized_body)
                 user_files.append(text_file)
                 print(f"    - ✅ Saved text submission for {anon_name}")
+                
+                files_processed += 1
             
             if user_files:
                 downloaded_files[user_id] = user_files
@@ -638,7 +666,7 @@ class TwoStepCanvasGrading:
         try:
             # Step 1a: Handle rubric (Canvas or local)
             if progress_callback:
-                progress_callback(15, "Loading rubric configuration...")
+                progress_callback(5, "Loading rubric configuration...")
             
             final_rubric_path = None
             if use_canvas_rubric:
@@ -674,7 +702,7 @@ class TwoStepCanvasGrading:
             
             # Step 1b: Load instructor configuration (if provided)
             if progress_callback:
-                progress_callback(20, "Loading instructor configuration...")
+                progress_callback(10, "Loading instructor configuration...")
             
             if instructor_config_path and os.path.exists(instructor_config_path):
                 print(f"🎓 Saving instructor configuration for Step 2...")
@@ -684,7 +712,7 @@ class TwoStepCanvasGrading:
             
             # Step 1c: Download submissions with anonymization
             if progress_callback:
-                progress_callback(30, "Downloading submissions from Canvas...")
+                progress_callback(15, "Starting download from Canvas...")
             
             print("📥 Downloading submissions with privacy protection...")
             downloaded_files = self.canvas.download_submissions_bulk(
@@ -702,7 +730,7 @@ class TwoStepCanvasGrading:
             
             # Step 1d: Save student mapping for Step 2 use
             if progress_callback:
-                progress_callback(80, "Saving student mapping...")
+                progress_callback(92, "Saving student mapping...")
             
             mapping_file = os.path.join(base_dir, "student_mapping.json")
             self.anonymizer.save_mapping(mapping_file)
@@ -710,7 +738,7 @@ class TwoStepCanvasGrading:
             
             # Step 1e: Prepare submission data for Step 2
             if progress_callback:
-                progress_callback(90, "Preparing submission data...")
+                progress_callback(95, "Preparing submission data...")
             
             # Create submission data structure for Step 2 grading
             submission_data = []

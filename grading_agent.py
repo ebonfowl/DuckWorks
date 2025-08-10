@@ -37,272 +37,582 @@ MODELS_WITHOUT_FILE_SUPPORT = [
     'babbage-002'
 ]
 
+
+# Unified GradingAgent with multi-file, course material summarization, custom instructions, GPT-5 API compatibility, and cached input optimization
 class GradingAgent:
-    """Main class for the automated grading system"""
-    
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
-        """
-        Initialize the GradingAgent
+    def _upload_files(self, file_paths: list) -> tuple:
+        """Upload files to OpenAI and return (uploaded_files, file_ids, errors)."""
+        import mimetypes
+        uploaded_files = []
+        file_ids = []
+        errors = []
         
-        Args:
-            api_key (str): OpenAI API key
-            model (str): OpenAI model to use for grading
-        """
+        for file_path in file_paths:
+            try:
+                mime_type, _ = mimetypes.guess_type(file_path)
+                with open(file_path, "rb") as f:
+                    file_obj = self.client.files.create(
+                        file=f,
+                        purpose="assistants"  # Note: This may need adjustment for chat completions
+                    )
+                file_ids.append(file_obj.id)
+                uploaded_files.append(os.path.basename(file_path))
+                logging.info(f"Successfully uploaded {os.path.basename(file_path)} (ID: {file_obj.id})")
+            except Exception as upload_exc:
+                logging.error(f"OpenAI file upload failed for {file_path}: {upload_exc}")
+                errors.append({"file_path": file_path, "error": str(upload_exc)})
+                
+        return uploaded_files, file_ids, errors
+    
+    def _cleanup_uploaded_files(self, file_ids: list) -> None:
+        """Clean up uploaded files from OpenAI to prevent storage bloat."""
+        for file_id in file_ids:
+            try:
+                self.client.files.delete(file_id)
+                logging.debug(f"Cleaned up uploaded file: {file_id}")
+            except Exception as cleanup_exc:
+                logging.warning(f"Failed to clean up file {file_id}: {cleanup_exc}")
+    
+    def _extract_text_from_file(self, file_path) -> str:
+        """Extract text content from various file types."""
+        file_path = Path(file_path)
+        
+        try:
+            if file_path.suffix.lower() == '.pdf':
+                return self._extract_pdf_text(file_path)
+            elif file_path.suffix.lower() == '.docx':
+                return self._extract_docx_text(file_path)
+            elif file_path.suffix.lower() in ['.txt', '.md']:
+                return self._extract_txt_text(file_path)
+            elif file_path.suffix.lower() in ['.html', '.htm']:
+                return self._extract_html_text(file_path)
+            elif file_path.suffix.lower() in ['.pptx', '.ppt']:
+                return self._extract_pptx_text(file_path)
+            elif file_path.suffix.lower() == '.odt':
+                return self._extract_odt_text(file_path)
+            elif file_path.suffix.lower() == '.rtf':
+                return self._extract_rtf_text(file_path)
+            else:
+                # Try as plain text
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    return f.read()
+        except Exception as e:
+            logging.error(f"Failed to extract text from {file_path}: {e}")
+            return f"[Error extracting text from {file_path.name}: {e}]"
+    
+    def _extract_pdf_text(self, file_path: Path) -> str:
+        """Extract text from PDF file."""
+        try:
+            import PyPDF2
+            text_content = []
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                for page_num, page in enumerate(pdf_reader.pages, 1):
+                    page_text = page.extract_text()
+                    text_content.append(f"--- PAGE {page_num} ---\n{page_text}")
+            return '\n'.join(text_content)
+        except ImportError:
+            return "[PyPDF2 not available for PDF processing]"
+        except Exception as e:
+            logging.error(f"PDF extraction error: {e}")
+            return f"[Error extracting PDF text: {e}]"
+    
+    def _extract_docx_text(self, file_path: Path) -> str:
+        """Extract text from DOCX file."""
+        try:
+            from docx import Document
+            doc = Document(file_path)
+            text_content = []
+            
+            # Extract paragraphs
+            for para in doc.paragraphs:
+                if para.text.strip():
+                    text_content.append(para.text)
+            
+            # Extract tables
+            for table in doc.tables:
+                text_content.append("\n[TABLE:]")
+                for row in table.rows:
+                    row_text = " | ".join([cell.text.strip() for cell in row.cells])
+                    if row_text.strip():
+                        text_content.append(row_text)
+                text_content.append("[END TABLE]\n")
+            
+            return '\n'.join(text_content)
+        except ImportError:
+            return "[python-docx not available for DOCX processing]"
+        except Exception as e:
+            logging.error(f"DOCX extraction error: {e}")
+            return f"[Error extracting DOCX text: {e}]"
+    
+    def _extract_txt_text(self, file_path: Path) -> str:
+        """Extract text from plain text file."""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
+        except Exception as e:
+            logging.error(f"TXT extraction error: {e}")
+            return f"[Error extracting text: {e}]"
+    
+    def _extract_html_text(self, file_path: Path) -> str:
+        """Extract text from HTML file."""
+        try:
+            from bs4 import BeautifulSoup
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                soup = BeautifulSoup(f.read(), 'html.parser')
+                return soup.get_text()
+        except ImportError:
+            # Fallback: read as plain text
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
+        except Exception as e:
+            logging.error(f"HTML extraction error: {e}")
+            return f"[Error extracting HTML text: {e}]"
+    
+    def _extract_pptx_text(self, file_path: Path) -> str:
+        """Extract text from PowerPoint file."""
+        try:
+            from pptx import Presentation
+            prs = Presentation(file_path)
+            text_content = []
+            
+            for slide_num, slide in enumerate(prs.slides, 1):
+                text_content.append(f"--- SLIDE {slide_num} ---")
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        text_content.append(shape.text.strip())
+            
+            return '\n'.join(text_content)
+        except ImportError:
+            return "[python-pptx not available for PowerPoint processing]"
+        except Exception as e:
+            logging.error(f"PPTX extraction error: {e}")
+            return f"[Error extracting PowerPoint text: {e}]"
+    
+    def _extract_odt_text(self, file_path: Path) -> str:
+        """Extract text from ODT file."""
+        try:
+            import zipfile
+            import xml.etree.ElementTree as ET
+            
+            with zipfile.ZipFile(file_path, 'r') as odt_zip:
+                if 'content.xml' in odt_zip.namelist():
+                    content_xml = odt_zip.read('content.xml').decode('utf-8')
+                    root = ET.fromstring(content_xml)
+                    
+                    # Extract all text elements
+                    text_elements = []
+                    for elem in root.iter():
+                        if elem.text:
+                            text_elements.append(elem.text.strip())
+                    
+                    return '\n'.join(filter(None, text_elements))
+                else:
+                    return "[ODT content.xml not found]"
+        except Exception as e:
+            logging.error(f"ODT extraction error: {e}")
+            return f"[Error extracting ODT text: {e}]"
+    
+    def _extract_rtf_text(self, file_path: Path) -> str:
+        """Extract text from RTF file."""
+        try:
+            # Basic RTF text extraction (very simple)
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                # Very basic RTF parsing - just remove obvious RTF tags
+                import re
+                # Remove RTF control words
+                content = re.sub(r'\\[a-z]+\d*\s*', '', content)
+                content = re.sub(r'[{}]', '', content)
+                return content.strip()
+        except Exception as e:
+            logging.error(f"RTF extraction error: {e}")
+            return f"[Error extracting RTF text: {e}]"
+    _course_summary_cache = {}
+    """Unified GradingAgent for multi-file, course material summarization, custom instructions, and GPT-5 API compatibility."""
+
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini"):
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.rubric = None
         self.students_data = []
         self.graded_results = []
         self.instructor_config = None
-        self.course_materials = []  # Store course materials for grading context
-        self.course_materials_instructions = ""  # Instructions for how to use course materials
-        
-    def model_supports_file_uploads(self) -> bool:
-        """
-        Check if the current model supports file uploads for document grading
-        
-        Returns:
-            bool: True if model supports file uploads, False otherwise
-        """
-        # Convert to lowercase for case-insensitive matching
-        model_lower = self.model.lower()
-        
-        # Check if the model is in our blocked list
-        for blocked_model in MODELS_WITHOUT_FILE_SUPPORT:
-            if blocked_model.lower() in model_lower:
-                return False
-        
-        return True
-        
+        self.course_materials = []  # Initialize as empty list
+        self.course_materials_instructions = ""  # Initialize as empty string
+        self.summarized_course_materials = None
+
+
     def load_instructor_config(self, config_path: str) -> Dict[str, Any]:
-        """
-        Load instructor grading configuration
-        
-        Args:
-            config_path (str): Path to the instructor config JSON file
-            
-        Returns:
-            Dict: Loaded configuration data
-        """
+        """Load instructor configuration from JSON file."""
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                self.instructor_config = config
-                print(f"✅ Loaded instructor configuration: {config.get('instructor_name', 'Unknown')}")
-                print(f"   Grading style: {config.get('grading_philosophy', 'Standard')}")
-                return config
-        except FileNotFoundError:
-            print(f"❌ Instructor config file not found: {config_path}")
-            return {}
-        except json.JSONDecodeError as e:
-            print(f"❌ Invalid JSON in instructor config: {e}")
-            return {}
+                self.instructor_config = json.load(f)
+                logging.info(f"Loaded instructor config from {config_path}")
+                return self.instructor_config
         except Exception as e:
-            print(f"❌ Error loading instructor config: {e}")
+            logging.error(f"Failed to load instructor config: {e}")
+            self.instructor_config = {}
             return {}
-        
+
+    def load_rubric(self, rubric_path: str) -> Dict[str, Any]:
+        """Load grading rubric from JSON file."""
+        try:
+            with open(rubric_path, 'r', encoding='utf-8') as f:
+                self.rubric = json.load(f)
+                logging.info(f"Loaded rubric from {rubric_path}")
+                return self.rubric
+        except Exception as e:
+            logging.error(f"Failed to load rubric: {e}")
+            self.rubric = {}
+            return {}
+
     def load_course_materials(self, materials_files: List[str], instructions: str = "") -> None:
-        """
-        Load course materials to provide grading context
-        
-        Args:
-            materials_files (List[str]): List of file paths to course materials
-            instructions (str): Instructions on how to use the course materials in grading
-        """
+        """Load course materials from files for grading context."""
         self.course_materials = []
         self.course_materials_instructions = instructions
         
         for file_path in materials_files:
             try:
-                # Extract content from course material file
-                content = self._extract_text_from_file(Path(file_path))
-                
+                content = self._extract_text_from_file(file_path)
                 self.course_materials.append({
-                    'file_path': file_path,
-                    'filename': Path(file_path).name,
-                    'content': content
+                    'filename': os.path.basename(file_path),
+                    'content': content,
+                    'file_path': file_path
                 })
-                
-                print(f"✅ Loaded course material: {Path(file_path).name}")
-                
+                logging.info(f"Loaded course material: {os.path.basename(file_path)}")
             except Exception as e:
-                print(f"⚠️ Failed to load course material {file_path}: {e}")
-                continue
+                logging.error(f"Failed to load course material {file_path}: {e}")
         
-        print(f"📚 Loaded {len(self.course_materials)} course material files for grading context")
-    
-    def load_rubric(self, rubric_path: str) -> Dict[str, Any]:
-        """
-        Load grading rubric from JSON file
-        
-        Args:
-            rubric_path (str): Path to the rubric JSON file
-            
-        Returns:
-            Dict: Loaded rubric data
-        """
-        try:
-            with open(rubric_path, 'r', encoding='utf-8') as file:
-                self.rubric = json.load(file)
-            logging.info(f"Rubric loaded successfully from {rubric_path}")
-            return self.rubric
-        except Exception as e:
-            logging.error(f"Error loading rubric: {str(e)}")
-            raise
-    
-    def load_student_papers(self, papers_folder: str) -> List[Dict[str, str]]:
-        """
-        Load student papers from a folder (supports .txt, .docx, .pdf, .pptx)
-        
-        Args:
-            papers_folder (str): Path to folder containing student papers
-            
-        Returns:
-            List[Dict]: List of student paper data
-        """
-        papers_path = Path(papers_folder)
+        logging.info(f"Loaded {len(self.course_materials)} course materials")
+
+
+    def summarize_course_materials(self, rubric: dict, course_materials: list) -> str:
+        """Summarize the provided course materials for cost-effective grading context."""
+        if not course_materials:
+            return ""
+        import hashlib
+        # Create a hash key from rubric and course_materials content
+        rubric_str = json.dumps(rubric, sort_keys=True)
+        materials_str = "\n\n".join([m['content'] for m in course_materials])
+        cache_key = hashlib.sha256((rubric_str + materials_str).encode('utf-8')).hexdigest()
+        if cache_key in self._course_summary_cache:
+            return self._course_summary_cache[cache_key]
+        prompt = (
+            "Summarize the following course materials for use as grading context. "
+            "Focus on rubric-relevant information and key facts.\n\n"
+            f"RUBRIC: {json.dumps(rubric, indent=2)}\n\nCOURSE MATERIALS:\n{materials_str}"
+        )
+        summary = self._make_chat_completion([
+            {"role": "system", "content": "You are an expert educator. Summarize course materials for grading context."},
+            {"role": "user", "content": prompt}
+        ], max_tokens=1500)
+        self._course_summary_cache[cache_key] = summary
+        return summary
+
+    def load_student_submissions(self, submissions_folder: str) -> List[Dict[str, Any]]:
+        """Load all files for each student as a single submission (multi-file support)."""
+        submissions_path = Path(submissions_folder)
         self.students_data = []
-        
-        supported_extensions = ['.txt', '.docx', '.pdf', '.pptx', '.ppt']
-        
-        for file_path in papers_path.iterdir():
-            if file_path.suffix.lower() in supported_extensions:
-                try:
-                    student_name = file_path.stem
-                    content = self._extract_text_from_file(file_path)
-                    
-                    self.students_data.append({
-                        'name': student_name,
-                        'filename': file_path.name,
-                        'content': content
-                    })
-                    logging.info(f"Loaded paper for {student_name}")
-                    
-                except Exception as e:
-                    logging.error(f"Error loading {file_path.name}: {str(e)}")
-                    
-        logging.info(f"Loaded {len(self.students_data)} student papers")
+        for student_dir in submissions_path.iterdir():
+            if student_dir.is_dir():
+                files = list(student_dir.glob("*"))
+                submission_files = []
+                for file_path in files:
+                    try:
+                        content = self._extract_text_from_file(file_path)
+                        submission_files.append({
+                            'filename': file_path.name,
+                            'content': content,
+                            'file_path': str(file_path)
+                        })
+                    except Exception as e:
+                        logging.warning(f"Failed to load {file_path}: {e}")
+                self.students_data.append({
+                    'student_name': student_dir.name,
+                    'files': submission_files
+                })
+        logging.info(f"Loaded {len(self.students_data)} student submissions (multi-file)")
         return self.students_data
-    
-    def _extract_text_from_file(self, file_path: Path) -> str:
-        """
-        Extract text content from different file types
-        
-        Args:
-            file_path (Path): Path to the file
+
+
+    def _grading_json_example(self, rubric=None):
+        """Return the required grading JSON format as a string for prompt inclusion."""
+        if rubric and isinstance(rubric, dict) and 'criteria' in rubric:
+            # Generate rubric-specific example
+            criteria_examples = []
+            for criterion_name, criterion_data in rubric['criteria'].items():
+                max_points = criterion_data.get('points', 10)
+                criteria_examples.append(f'''        "{criterion_name}": {{
+            "score": <{max_points}_or_less>,
+            "max_score": {max_points},
+            "feedback": "<specific_feedback_for_{criterion_name.lower().replace(' ', '_')}>"
+        }}''')
             
-        Returns:
-            str: Extracted text content
-        """
-        # Enhanced debugging for the file path parameter
-        print(f"🔍 _extract_text_from_file called with: {repr(file_path)}")
-        print(f"🔍 file_path type: {type(file_path)}")
-        
-        if file_path is None:
-            raise ValueError("file_path cannot be None")
-        
-        if not isinstance(file_path, Path):
-            print(f"⚠️ file_path is not a Path object, converting from: {type(file_path)}")
-            try:
-                file_path = Path(file_path)
-            except Exception as e:
-                raise ValueError(f"Cannot convert file_path to Path object: {e}")
-        
-        print(f"🔍 Working with Path object: {file_path}")
-        print(f"🔍 Path exists: {file_path.exists()}")
-        
-        extension = file_path.suffix.lower()
-        print(f"🔍 File extension: {extension}")
-        
-        if extension == '.txt':
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-                
-        elif extension == '.docx':
-            print(f"🔍 Processing DOCX file: {file_path}")
-            doc = Document(file_path)
-            return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+            criteria_section = ',\n'.join(criteria_examples)
+            max_possible = rubric.get('total_points', 100)
             
-        elif extension == '.pdf':
-            print(f"🔍 Processing PDF file: {file_path}")
-            with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                text = ''
-                for page in pdf_reader.pages:
-                    text += page.extract_text() + '\n'
-                return text
-                
-        elif extension in ['.pptx', '.ppt']:
-            print(f"🔍 Processing PowerPoint file: {file_path}")
-            try:
-                from pptx import Presentation
-                prs = Presentation(file_path)
-                
-                content_parts = []
-                content_parts.append(f"POWERPOINT PRESENTATION: {file_path.name}")
-                content_parts.append(f"Total Slides: {len(prs.slides)}")
-                content_parts.append("=" * 50)
-                
-                for slide_num, slide in enumerate(prs.slides, 1):
-                    content_parts.append(f"\n--- SLIDE {slide_num} ---")
-                    
-                    # Extract text from all shapes in the slide
-                    slide_text = []
-                    for shape in slide.shapes:
-                        if hasattr(shape, "text") and shape.text.strip():
-                            slide_text.append(shape.text.strip())
-                    
-                    if slide_text:
-                        content_parts.extend(slide_text)
-                    else:
-                        content_parts.append("[No text content on this slide]")
-                
-                full_content = '\n'.join(content_parts)
-                print(f"🔍 Extracted {len(prs.slides)} slides from PowerPoint")
-                return full_content
-                
-            except ImportError:
-                print(f"⚠️ python-pptx not available, cannot process PowerPoint file: {file_path}")
-                return f"[PowerPoint file: {file_path.name} - python-pptx library not installed for text extraction]"
-            except Exception as e:
-                print(f"⚠️ Error processing PowerPoint file {file_path}: {e}")
-                return f"[PowerPoint file: {file_path.name} - Error extracting content: {str(e)}]"
-                return text
-                
-        elif extension in ['.html', '.htm']:
-            print(f"🔍 Processing HTML file: {file_path}")
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-                
-        elif extension in ['.rtf', '.odt']:
-            print(f"🔍 Processing {extension.upper()} file as text: {file_path}")
-            # Try to read as text file for basic content extraction
-            try:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    return file.read()
-            except UnicodeDecodeError:
-                # Try with different encoding
-                try:
-                    with open(file_path, 'r', encoding='latin-1') as file:
-                        return file.read()
-                except Exception as e:
-                    raise ValueError(f"Could not read {extension} file with available methods: {e}")
-                
+            return f'''{{
+    "overall_score": <total_points_earned>,
+    "max_possible_score": {max_possible},
+    "percentage": <percentage_score>,
+    "letter_grade": "<letter_grade>",
+    "criteria_scores": {{
+{criteria_section}
+    }},
+    "overall_feedback": "<comprehensive_feedback>",
+    "strengths": ["<strength1>", "<strength2>"],
+    "areas_for_improvement": ["<improvement1>", "<improvement2>"]
+}}'''
         else:
-            raise ValueError(f"Unsupported file type: {extension}")
-    
-    def grade_paper(self, student_data: Dict[str, str]) -> Dict[str, Any]:
-        """
-        Grade a single student paper using ChatGPT with intelligent file upload support
+            # Fallback generic example
+            return '''
+{
+    "overall_score": <total_points>,
+    "max_possible_score": <maximum_points>,
+    "percentage": <percentage_score>,
+    "letter_grade": "<letter_grade>",
+    "criteria_scores": {
+        "<criterion_name>": {
+            "score": <points>,
+            "max_score": <max_points>,
+            "feedback": "<specific_feedback>"
+        }
+    },
+    "overall_feedback": "<comprehensive_feedback>",
+    "strengths": ["<strength1>", "<strength2>"],
+    "areas_for_improvement": ["<improvement1>", "<improvement2>"]
+}
+'''
+
+    def grade_submission(self, student_submission: Dict[str, Any], rubric: dict, course_materials: list = None, custom_instructions: str = "") -> Dict[str, Any]:
+        """Hybrid grading: file upload if supported, fallback to text extraction. Stateless with respect to rubric and course materials."""
+        # Handle None course_materials
+        course_materials = course_materials or []
         
-        This method automatically chooses between file upload (for compatible models) 
-        and text extraction (for older models or as fallback) to preserve document formatting.
+        # Summarize course materials for this grading call
+        course_summary = self.summarize_course_materials(rubric, course_materials)
+        
+        # Partition files into uploadable vs extractable
+        uploadable_files = []
+        extracted_texts = []
+        
+        for f in student_submission['files']:
+            file_path = f.get('file_path')
+            if not file_path or not os.path.exists(file_path):
+                # No file path or file doesn't exist, use extracted content
+                extracted_texts.append(f"--- {f['filename']} ---\n{f['content']}")
+                continue
+                
+            file_ext = os.path.splitext(file_path)[1].lower()
+            can_upload = self._model_supports_file_uploads() and file_ext in ['.pdf', '.docx', '.pptx', '.ppt', '.txt', '.html', '.htm']
+            
+            if can_upload:
+                uploadable_files.append(file_path)
+            else:
+                extracted_texts.append(f"--- {f['filename']} ---\n{f['content']}")
+
+        # Try file upload for uploadable files
+        uploaded_files, file_ids, upload_errors = [], [], []
+        if uploadable_files:
+            try:
+                uploaded_files, file_ids, upload_errors = self._upload_files(uploadable_files)
+            except Exception as upload_exc:
+                logging.error(f"File upload batch failed: {upload_exc}")
+                # Move all uploadable files to extracted texts as fallback
+                for file_path in uploadable_files:
+                    filename = os.path.basename(file_path)
+                    try:
+                        content = self._extract_text_from_file(file_path)
+                        extracted_texts.append(f"--- {filename} (upload failed, using text extraction) ---\n{content}")
+                    except Exception as extract_exc:
+                        logging.error(f"Fallback text extraction failed for {filename}: {extract_exc}")
+                        extracted_texts.append(f"--- {filename} (processing failed) ---\n[Error: Unable to process this file]")
+                upload_errors.append({"error": f"Batch upload failed: {upload_exc}"})
+
+        # Compose the grading prompt
+        file_list_str = ", ".join([f"{name} (uploaded)" for name in uploaded_files]) if uploaded_files else "None"
+        extracted_text_section = "\n\n".join(extracted_texts) if extracted_texts else "None"
+        
+        # Build the complete prompt
+        prompt = (
+            f"Grade the submission indicated below using EXACTLY the following rubric structure and point values.\n\n"
+            f"RUBRIC:\n{json.dumps(rubric, indent=2)}\n\n"
+            f"CRITICAL INSTRUCTIONS:\n"
+            f"- Use EXACTLY the criteria names from the rubric above\n"
+            f"- Use EXACTLY the point values specified in the rubric\n"
+            f"- Total possible score MUST be {rubric.get('total_points', 100)} points\n"
+            f"- Provide detailed feedback for each individual rubric criterion\n\n"
+            f"COURSE MATERIALS SUMMARY:\n{course_summary}\n\n" if course_summary else ""
+            f"CUSTOM INSTRUCTIONS:\n{custom_instructions}\n\n" if custom_instructions else ""
+            f"Please provide your response in the following JSON format:\n{self._grading_json_example(rubric)}\n\n"
+            f"Be specific, constructive, and fair in your grading. Provide actionable feedback.\n\n"
+            f"SUBMISSION FILES:\n"
+            f"Uploaded files: {file_list_str}\n"
+            f"Text-extracted content:\n{extracted_text_section}"
+        )
+
+        # Estimate tokens for adaptive response length (only count text, not uploaded files)
+        est_tokens = self._count_tokens(extracted_text_section + course_summary + custom_instructions)
+        if est_tokens > 50000:
+            max_output_tokens = 4000
+        elif est_tokens > 20000:
+            max_output_tokens = 3000
+        else:
+            max_output_tokens = 2000
+
+        # Make the API call (note: files parameter deprecated, using text extraction instead)
+        try:
+            result_content = self._make_chat_completion(
+                [
+                    {"role": "system", "content": self._build_system_message()},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=max_output_tokens,
+                temperature=0.3
+            )
+            
+            # Parse the grading response
+            try:
+                # Handle responses that may be wrapped in code blocks
+                clean_content = result_content.strip()
+                if clean_content.startswith('```json'):
+                    # Extract JSON from code blocks
+                    clean_content = clean_content.split('```json')[1].split('```')[0].strip()
+                elif clean_content.startswith('```'):
+                    # Handle generic code blocks
+                    clean_content = clean_content.split('```')[1].split('```')[0].strip()
+                
+                grading_data = json.loads(clean_content)
+            except json.JSONDecodeError:
+                logging.error(f"Failed to parse grading response as JSON: {result_content[:200]}...")
+                grading_data = {
+                    "error": "Failed to parse grading response as JSON",
+                    "raw_response": result_content,
+                    "overall_score": 0,
+                    "max_possible_score": 100,
+                    "percentage": 0,
+                    "letter_grade": "F",
+                    "criteria_scores": {},
+                    "overall_feedback": "Error: Could not parse AI grading response",
+                    "strengths": [],
+                    "areas_for_improvement": ["Grading system error - please review manually"]
+                }
+            
+            # Add metadata
+            grading_data['files_uploaded'] = uploaded_files
+            grading_data['file_ids'] = file_ids
+            grading_data['files_processed'] = len(student_submission['files'])
+            grading_data['estimated_tokens'] = est_tokens
+            if upload_errors:
+                grading_data['upload_errors'] = upload_errors
+                
+        except Exception as api_exc:
+            logging.error(f"OpenAI grading API call failed: {api_exc}")
+            grading_data = {
+                "error": f"Grading API call failed: {api_exc}",
+                "file_ids": file_ids,
+                "upload_errors": upload_errors,
+                "overall_score": 0,
+                "max_possible_score": 100,
+                "percentage": 0,
+                "letter_grade": "F",
+                "criteria_scores": {},
+                "overall_feedback": f"Error: API call failed - {api_exc}",
+                "strengths": [],
+                "areas_for_improvement": ["Grading system error - please review manually"]
+            }
+        
+        # Clean up uploaded files
+        if file_ids:
+            try:
+                self._cleanup_uploaded_files(file_ids)
+            except Exception as cleanup_exc:
+                logging.warning(f"Failed to clean up uploaded files: {cleanup_exc}")
+
+        # Add standard metadata
+        grading_data['student_name'] = student_submission['student_name']
+        grading_data['grading_date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        grading_data['grading_method'] = 'unified_multi_file'
+        
+        return grading_data
+
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens in text using tiktoken for the current model."""
+        try:
+            import tiktoken
+            enc = tiktoken.encoding_for_model(self.model)
+            return len(enc.encode(text))
+        except Exception:
+            # Fallback: rough estimate if tiktoken not available
+            return len(text) // 4
+
+    def model_supports_file_uploads(self) -> bool:
+        """Check if the current model supports file uploads for document grading (legacy method name)."""
+        return self._model_supports_file_uploads()
+    
+    def _model_supports_file_uploads(self) -> bool:
+        """Check if the current model supports file uploads for document grading."""
+        model_lower = self.model.lower()
+        for blocked_model in MODELS_WITHOUT_FILE_SUPPORT:
+            if blocked_model.lower() in model_lower:
+                return False
+        return True
+
+
+    def grade_all_submissions(self, rubric: dict, course_materials: list = None, custom_instructions: str = "") -> List[Dict[str, Any]]:
+        """Grade all loaded student submissions (multi-file, unified, GPT-5 compatible)."""
+        if not self.students_data:
+            raise ValueError("No student submissions loaded.")
+        
+        # Handle None parameters
+        course_materials = course_materials or []
+        
+        self.graded_results = []
+        for student_submission in self.students_data:
+            try:
+                result = self.grade_submission(student_submission, rubric, course_materials, custom_instructions)
+                self.graded_results.append(result)
+                logging.info(f"Successfully graded submission for {student_submission['student_name']}")
+            except Exception as e:
+                logging.error(f"Failed to grade {student_submission['student_name']}: {str(e)}")
+                # Add error result to maintain consistency
+                error_result = {
+                    'student_name': student_submission['student_name'],
+                    'error': str(e),
+                    'overall_score': 0,
+                    'max_possible_score': 100,
+                    'percentage': 0,
+                    'letter_grade': 'F',
+                    'criteria_scores': {},
+                    'overall_feedback': f"Grading failed: {str(e)}",
+                    'strengths': [],
+                    'areas_for_improvement': ["System error - manual review required"],
+                    'grading_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                self.graded_results.append(error_result)
+                
+        logging.info(f"Completed grading {len(self.graded_results)} submissions")
+        return self.graded_results
+
+    # ...existing code for export_results, generate_summary_report, etc...
+    
+    def grade_paper(self, student_data: Dict[str, str], custom_instructions: str = "") -> Dict[str, Any]:
+        """
+        Grade a single student paper with intelligent multi-file and upload support
+        
+        This method automatically detects multi-file submissions and routes to appropriate
+        grading logic. It chooses between file upload (for compatible models) and text 
+        extraction (for older models or as fallback) to preserve document formatting.
         
         Args:
             student_data (Dict): Student paper data with keys:
-                - 'name': Student name
-                - 'content': Extracted text content (for fallback)
-                - 'file_path': Path to original file (optional, for file upload)
+                - 'name': Student name  
+                - 'content': Extracted text content (for single-file fallback)
+                - 'file_path': Path to original file (optional, for single-file upload)
+                - 'files': List of file dicts for multi-file submissions (optional)
+                    Each file dict: {'filename': str, 'content': str, 'file_path': str}
+            custom_instructions (str): Additional grading instructions for this specific assignment
             
         Returns:
             Dict: Grading results
@@ -310,27 +620,59 @@ class GradingAgent:
         if not self.rubric:
             raise ValueError("Rubric not loaded. Please load a rubric first.")
         
+        # Detect if this is a multi-file submission
+        if 'files' in student_data and student_data['files']:
+            logging.info(f"Multi-file submission detected for {student_data['name']} ({len(student_data['files'])} files)")
+            # Convert to new multi-file format and use new grading method
+            submission_data = {
+                'student_name': student_data['name'],
+                'files': student_data['files']
+            }
+            
+            # Use the new unified grading method with proper parameters
+            return self.grade_submission(
+                submission_data, 
+                self.rubric, 
+                self.course_materials,
+                custom_instructions
+            )
+        
+        # Single-file submission processing
+        logging.info(f"Single-file submission detected for {student_data['name']}")
+        
         # Check content size for very large submissions
         if 'content' in student_data and student_data['content']:
             estimated_tokens = len(student_data['content']) // 4
             if estimated_tokens > 100000:
                 logging.warning(f"Very large submission detected for {student_data['name']} (~{estimated_tokens:,} tokens). This may approach model limits or incur high costs.")
         
-        # Try file upload first if model supports it and file path is available
-        if (self.model_supports_file_uploads() and 
-            'file_path' in student_data and 
-            student_data['file_path']):
-            
-            try:
-                logging.info(f"Attempting file upload grading for {student_data['name']} with {self.model}")
-                return self._grade_paper_with_file_upload(student_data)
-            except Exception as upload_error:
-                logging.warning(f"File upload failed for {student_data['name']}: {upload_error}")
-                logging.info(f"Falling back to text extraction for {student_data['name']}")
+        # For single-file, create a files structure for consistency with new method
+        if 'file_path' in student_data and student_data['file_path']:
+            files_data = [{
+                'filename': os.path.basename(student_data['file_path']),
+                'content': student_data.get('content', ''),
+                'file_path': student_data['file_path']
+            }]
+        else:
+            # No file path, just content
+            files_data = [{
+                'filename': 'submission.txt',
+                'content': student_data.get('content', ''),
+                'file_path': None
+            }]
         
-        # Fallback to text extraction method
-        logging.info(f"Using text extraction grading for {student_data['name']}")
-        return self._grade_paper_with_text_extraction(student_data)
+        submission_data = {
+            'student_name': student_data['name'],
+            'files': files_data
+        }
+        
+        # Use unified grading method for consistency
+        return self.grade_submission(
+            submission_data,
+            self.rubric,
+            self.course_materials, 
+            custom_instructions
+        )
     
     def _grade_paper_with_file_upload(self, student_data: Dict[str, str]) -> Dict[str, Any]:
         """
@@ -1154,6 +1496,31 @@ Be specific, constructive, and fair in your grading. Provide actionable feedback
         }
         
         return summary
+
+    def _make_chat_completion(self, messages, max_tokens=1500, temperature=0.3):
+        """Unified wrapper for OpenAI chat.completions.create, supporting GPT-5 and earlier models."""
+        kwargs = {
+            'model': self.model,
+            'messages': messages,
+            'temperature': temperature
+        }
+        
+        # Use correct token parameter for model
+        if str(self.model).lower().startswith('gpt-5'):
+            kwargs['max_completion_tokens'] = max_tokens
+        else:
+            kwargs['max_tokens'] = max_tokens
+        
+        # Note: OpenAI Chat Completions API has deprecated the files parameter
+        # File uploads now require different approaches (Assistant API, etc.)
+        # This method now only handles text-based completions
+        
+        try:
+            response = self.client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+        except Exception as api_exc:
+            logging.error(f"API call failed: {api_exc}")
+            raise api_exc
 
 
 def main():
