@@ -70,6 +70,8 @@ DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. I
 
 ## [Development Roadmap](#development-roadmap-1)
 
+See what we have planned for the future of DuckWorks! Big things are coming...
+
 --- 
 
 # 🦆 DuckGrade - AI-Powered Assignment Grading
