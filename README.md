@@ -26,7 +26,7 @@ DuckGrade is the first tool in the **DuckWorks Educational Automation Suite**. I
    - tiktoken
    - PyQt
 
-**Note:** This project uses its own conda environment located in a `.conda/` folder within the working directory. This is a standard conda environment set up, but all batch files will refer to that folder to execute the GUI script so you must have your environment set up in the same way to take advantage of the batch files.
+**Note:** This project uses its own conda environment with a `.conda/` folder inside the working directory that contains the python interpreter. This is a standard conda environment set up, but all batch files will refer to that folder to execute the GUI script so you must have your environment set up in the same way to take advantage of the batch files.
 
 **Coming Soon:** Windows executable with compiled C++ binaries! (No more conda stuff)
 
@@ -100,6 +100,8 @@ DuckGrade is an intelligent grading system that uses OpenAI's ChatGPT API to aut
 
 ## Instructions
 
+Be sure you are connected to both the AI and learning management system on the Home tab, click the DuckGrade button to bring up the grading GUI tab, then follow these steps to start grading:
+
 1. Choose course and assignment from dropdowns
 2. (Optional) Select an instructor personality configuration or create a new one
 3. Select your rubric file or tell the grader to download the assignment rubric from Canvas
@@ -157,8 +159,7 @@ The system generates a spreadsheet with the following columns:
 - `AI_Score`: Total points earned
 - `Max_Score`: Maximum possible points
 - `Percentage`: Score as percentage
-- `Final_Grade`: Final score that will be passed back to Canvas
-- `Grading_Date`: When grading was completed
+- `Final_Grade`: Final score that will be passed back to Canvas 
 
 ### Feedback
 - `AI_Comments`: Comprehensive overall and individual criterion feedback, will provide each criterion score
@@ -318,3 +319,4 @@ Remember that AI grading should supplement, not replace, human judgment in educa
 ## Long-Term Development Goals
 - Selectable integration with multiple learning management systems such as Blackboard and Google Classroom; just toggle to your LMS, input the relevant API credentials, and get to work!
 - MacOS executable version
+- Other AI API options: Currently considering on Anthropic models, but once other companies catch up, their models will be considered (Gemini, Perplexity, etc.)
